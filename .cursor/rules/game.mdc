@@ -1,0 +1,18 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+Project overview:
+2 players are in a match
+a clock starts
+players have a time period to guess as many words in wordle format
+at the end of the time, each player's score is tallied up
+player with higher score wins
+
+round starts:
+player gets 3 min to guess as many word as possible
+if they run out of attempts, show the word and go to next word
+tally up their total score at the end of round
+whoever has the highest game score at the end wins
