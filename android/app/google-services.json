@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "196967614310",
+    "project_id": "wibble-7b271",
+    "storage_bucket": "wibble-7b271.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:196967614310:android:f30c9e5b699ddbfadb6aa7",
+        "android_client_info": {
+          "package_name": "com.example.wibble"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrlHANXUPAKdEu_fD7omg_znlXdZrywN0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

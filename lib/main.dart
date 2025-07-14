@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/pages/gameplay.dart';
+import 'package:wibble/pages/mainmenu.dart';
+import 'firebase/index.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeFirebase();
   runApp(MyApp());
 }
 
@@ -18,7 +22,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         ),
-        home: Gameplay(),
+        home: Mainmenu(),
       ),
     );
   }
