@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/pages/gameplay.dart';
 import 'package:wibble/pages/mainmenu.dart';
+import 'package:wibble/types.dart';
 import 'firebase/index.dart';
 
 void main() async {
@@ -35,4 +36,10 @@ class Store extends ChangeNotifier {
     "wordLength": 5,
     "maxAttempts": 6,
   };
+  var user = User(
+    id: 'new',
+    username: 'bing bong',
+    rank: Rank.bronze,
+    createdAt: DateTime.now(),
+  );
 }

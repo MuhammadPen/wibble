@@ -1,6 +1,6 @@
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'types.dart';
+import '../../types.dart';
 
 class Firestore {
   static FirebaseFirestore get instance => FirebaseFirestore.instance;
@@ -35,22 +35,62 @@ class Firestore {
     await instance.collection(collectionId).doc(documentId).update(data);
   }
 
-  Future<void> createLobby({required LobbyPlayerInfo playerInfo}) async {
+  Future<void> _deleteDocument({
+    required String collectionId,
+    required String documentId,
+  }) async {
+    await instance.collection(collectionId).doc(documentId).delete();
+  }
+
+  Future<Stream<DocumentSnapshot>> subscribeToDocument({
+    required String collectionId,
+    required String documentId,
+  }) async {
+    final Stream<DocumentSnapshot> stream = instance
+        .collection(collectionId)
+        .doc(documentId)
+        .snapshots();
+
+    return stream;
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> getOpen1v1Lobbies() async {
+    final lobbies = await instance
+        .collection(FirestoreCollections.multiplayer)
+        .where('playerCount', isEqualTo: 1)
+        .get();
+
+    return lobbies;
+  }
+
+  Future<String> createLobby({
+    required int playerCount,
+    required LobbyPlayerInfo playerInfo,
+  }) async {
+    final lobbyId = Uuid().v4();
+    final Map<String, dynamic> lobbyData = {
+      'playerCount': playerCount,
+      'players': {playerInfo.user.id: playerInfo.toJson()},
+    };
     await _addDocument(
       collectionId: FirestoreCollections.multiplayer,
-      documentId: Uuid().v4(),
-      data: {playerInfo.userId: playerInfo},
+      documentId: lobbyId,
+      data: lobbyData,
     );
+    return lobbyId;
   }
 
   Future<void> joinLobby({
-    required LobbyPlayerInfo playerInfo,
     required String lobbyId,
+    required LobbyPlayerInfo playerInfo,
   }) async {
     await _updateDocument(
       collectionId: FirestoreCollections.multiplayer,
       documentId: lobbyId,
-      data: {playerInfo.userId: playerInfo},
+      data: {
+        'players.${playerInfo.user.id}': playerInfo.toJson(),
+        'playerCount': FieldValue.increment(1),
+      },
     );
   }
 }
