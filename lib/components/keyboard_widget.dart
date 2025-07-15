@@ -8,12 +8,12 @@ class KeyboardWidget extends StatefulWidget {
   final bool isCurrentWordComplete;
 
   const KeyboardWidget({
-    Key? key,
+    super.key,
     required this.onKeyTap,
     required this.onDelete,
     required this.onEnter,
     required this.isCurrentWordComplete,
-  }) : super(key: key);
+  });
 
   @override
   State<KeyboardWidget> createState() => _KeyboardWidgetState();
@@ -183,7 +183,7 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
             padding: EdgeInsets.zero,
             backgroundColor: isEnterkey && isCurrentWordComplete
                 ? Colors.blueAccent.withValues(alpha: 0.8)
-                : Colors.grey[300],
+                : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),

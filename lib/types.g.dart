@@ -45,3 +45,23 @@ Map<String, dynamic> _$LobbyPlayerInfoToJson(LobbyPlayerInfo instance) =>
       'round': instance.round,
       'attempts': instance.attempts,
     };
+
+Lobby _$LobbyFromJson(Map<String, dynamic> json) => Lobby(
+  id: json['id'] as String,
+  rounds: (json['rounds'] as num).toInt(),
+  wordLength: (json['wordLength'] as num).toInt(),
+  maxAttempts: (json['maxAttempts'] as num).toInt(),
+  playerCount: (json['playerCount'] as num).toInt(),
+  players: (json['players'] as Map<String, dynamic>).map(
+    (k, e) => MapEntry(k, LobbyPlayerInfo.fromJson(e as Map<String, dynamic>)),
+  ),
+);
+
+Map<String, dynamic> _$LobbyToJson(Lobby instance) => <String, dynamic>{
+  'id': instance.id,
+  'rounds': instance.rounds,
+  'wordLength': instance.wordLength,
+  'maxAttempts': instance.maxAttempts,
+  'playerCount': instance.playerCount,
+  'players': instance.players.map((k, e) => MapEntry(k, e.toJson())),
+};

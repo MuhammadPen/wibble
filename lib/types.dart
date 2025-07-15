@@ -48,3 +48,25 @@ class LobbyPlayerInfo {
       _$LobbyPlayerInfoFromJson(json);
   Map<String, dynamic> toJson() => _$LobbyPlayerInfoToJson(this);
 }
+
+@JsonSerializable(explicitToJson: true)
+class Lobby {
+  final String id;
+  final int rounds;
+  final int wordLength;
+  final int maxAttempts;
+  final int playerCount;
+  final Map<String, LobbyPlayerInfo> players;
+  const Lobby({
+    required this.id,
+    required this.rounds,
+    required this.wordLength,
+    required this.maxAttempts,
+    required this.playerCount,
+    required this.players,
+  });
+
+  // Generated methods:
+  factory Lobby.fromJson(Map<String, dynamic> json) => _$LobbyFromJson(json);
+  Map<String, dynamic> toJson() => _$LobbyToJson(this);
+}

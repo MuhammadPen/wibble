@@ -3,11 +3,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/pages/gameplay.dart';
-import 'package:wibble/firebase/firestore/index.dart';
-import 'package:wibble/types.dart';
 
 class Mainmenu extends StatefulWidget {
   const Mainmenu({super.key});
@@ -17,10 +14,36 @@ class Mainmenu extends StatefulWidget {
 }
 
 class _MainmenuState extends State<Mainmenu> {
-  var isMatchmaking = false;
+  String? _previousLobbyDataString;
+  bool _hasNavigated = false; // Add flag to prevent multiple navigations
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final store = Provider.of<Store>(context);
+    final lobbyData = store.lobbyData;
+
+    if (lobbyData.playerCount > 1 && !_hasNavigated) {
+      _hasNavigated = true; // Set flag to prevent future navigations
+      // Defer state changes until after the current build is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        store.isMatchmaking = false;
+        Navigator.pushNamed(context, '/gameplay');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<Store>(context).user;
+    final store = Provider.of<Store>(context);
+    final user = store.user;
+    final isMatchmaking = store.isMatchmaking;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      store.resumeMatch();
+    });
+
     final buttonStyle = ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,
       foregroundColor: Colors.white,
@@ -28,6 +51,7 @@ class _MainmenuState extends State<Mainmenu> {
       textStyle: TextStyle(fontSize: 16),
       elevation: 0,
     );
+
     return Scaffold(
       appBar: AppBar(title: Text('Wibble')),
       body: Center(
@@ -59,21 +83,7 @@ class _MainmenuState extends State<Mainmenu> {
                     icon: Icon(Icons.person),
                     label: Text("1v1"),
                     onPressed: () async {
-                      setState(() {
-                        isMatchmaking = true;
-                      });
-
-                      final lobbySubscription = await start1v1Matchmaking(
-                        LobbyPlayerInfo(
-                          user: user,
-                          score: 0,
-                          round: 0,
-                          attempts: 0,
-                        ),
-                      );
-                      lobbySubscription.listen((event) {
-                        print(event.data());
-                      });
+                      await store.startMatchmaking();
                     },
                     style: buttonStyle,
                   ),

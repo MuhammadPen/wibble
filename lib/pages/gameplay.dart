@@ -1,9 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:wibble/components/clock.dart';
 import 'package:wibble/components/keyboard_widget.dart';
 import 'package:wibble/components/word_grid.dart';
+import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
+import 'package:wibble/types.dart';
 import 'dart:async';
+
+class GameStatus extends StatelessWidget {
+  final int remainingSeconds;
+  final User user;
+  final LobbyPlayerInfo? opponent;
+  const GameStatus({
+    super.key,
+    required this.remainingSeconds,
+    required this.user,
+    required this.opponent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      width: MediaQuery.of(context).size.width * 0.75,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: Row(
+        children: [
+          ClockWidget(remainingSeconds: remainingSeconds, totalSeconds: 180),
+          SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Your score",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Consumer<Store>(
+                      builder: (context, store, child) {
+                        final currentPlayer = store.lobbyData.players[user.id];
+                        return Text(
+                          '${currentPlayer?.score ?? 0}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      opponent?.user.username ?? 'Opponent',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '${opponent?.score ?? 0}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class Gameplay extends StatefulWidget {
   const Gameplay({super.key});
@@ -90,12 +174,6 @@ class _GameplayState extends State<Gameplay> {
     );
   }
 
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
   void _selectWord() async {
     final String wordList = await DefaultAssetBundle.of(
       context,
@@ -108,7 +186,7 @@ class _GameplayState extends State<Gameplay> {
   }
 
   void _updateScore() {
-    final maxAttempts = context.read<Store>().lobbyData["maxAttempts"] as int;
+    final maxAttempts = context.read<Store>().lobbyData.maxAttempts;
     final attemptsUsed =
         _cursorPosition[0] + 1; // +1 because cursor position is 0-indexed
 
@@ -127,8 +205,8 @@ class _GameplayState extends State<Gameplay> {
   /// Initialize the game grid based on lobby settings
   void _initializeGameGrid() {
     final appStore = context.read<Store>();
-    final wordLength = appStore.lobbyData["wordLength"] as int;
-    final maxAttempts = appStore.lobbyData["maxAttempts"] as int;
+    final wordLength = appStore.lobbyData.wordLength;
+    final maxAttempts = appStore.lobbyData.maxAttempts;
 
     _guessGrid = List.generate(
       maxAttempts,
@@ -223,10 +301,33 @@ class _GameplayState extends State<Gameplay> {
         _areAttemptsOver = true;
       }
     });
+
+    // update player progress in lobby
+    // if the lobby doesnt exist this will just error out. can ignore that
+    updatePlayerProgressInLobby(
+      lobbyId: context.read<Store>().lobbyData.id,
+      playerId: context.read<Store>().user.id,
+      score: _score,
+      round: _currentRound,
+      attempts: _cursorPosition[0] + 1,
+    ).catchError((error) {
+      print('Failed to update progress: $error');
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    // lobbyData
+    final lobbyData = context.read<Store>().lobbyData;
+    LobbyPlayerInfo? opponent;
+    try {
+      opponent = lobbyData.players.values.firstWhere(
+        (e) => e.user.id != context.read<Store>().user.id,
+      );
+    } catch (e) {
+      print('No opponent found');
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -260,31 +361,23 @@ class _GameplayState extends State<Gameplay> {
         focusNode: _focusNode,
         autofocus: true,
         child: Scaffold(
-          backgroundColor: Colors.grey[100],
           appBar: AppBar(title: const Text('Wibble')),
           body: SafeArea(
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
+                  GameStatus(
+                    remainingSeconds: _remainingSeconds,
+                    user: context.read<Store>().user,
+                    opponent: opponent,
+                  ),
                   // Word grid display
                   WordGrid(
                     guessGrid: _guessGrid,
                     cursorPosition: _cursorPosition,
                     isWordComplete: _isCurrentWordComplete,
                     targetWord: _currentWord,
-                  ),
-                  Text(_currentWord),
-                  Text(_currentRound.toString()),
-                  Text(_score.toString()),
-                  Text(
-                    _formatTime(_remainingSeconds),
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: _remainingSeconds <= 30
-                          ? Colors.red
-                          : Colors.black,
-                    ),
                   ),
                   // Keyboard
                   Container(

@@ -9,13 +9,89 @@
 // Subscribe to the collection
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import 'package:wibble/firebase/firestore/index.dart';
 import 'package:wibble/types.dart';
+
+Future<String> createLobby({required Lobby lobby}) async {
+  await Firestore().addDocument(
+    collectionId: FirestoreCollections.multiplayer,
+    documentId: lobby.id,
+    data: lobby.toJson(),
+  );
+  return lobby.id;
+}
+
+Future<void> joinLobby({
+  required String lobbyId,
+  required LobbyPlayerInfo playerInfo,
+}) async {
+  await Firestore().updateDocument(
+    collectionId: FirestoreCollections.multiplayer,
+    documentId: lobbyId,
+    data: {
+      'players.${playerInfo.user.id}': playerInfo.toJson(),
+      'playerCount': FieldValue.increment(1),
+    },
+  );
+}
+
+Future<void> leaveLobby({
+  required String lobbyId,
+  required String playerId,
+}) async {
+  await Firestore().updateDocument(
+    collectionId: FirestoreCollections.multiplayer,
+    documentId: lobbyId,
+    data: {
+      'players.$playerId': FieldValue.delete(),
+      'playerCount': FieldValue.increment(-1),
+    },
+  );
+}
+
+Future<QuerySnapshot<Map<String, dynamic>>> getOpen1v1Lobbies() async {
+  final lobbies = await Firestore.instance
+      .collection(FirestoreCollections.multiplayer)
+      .where('playerCount', isEqualTo: 1)
+      .get();
+
+  return lobbies;
+}
+
+Future<QuerySnapshot<Map<String, dynamic>>> getLobbyByPlayerId({
+  required String playerId,
+}) async {
+  final lobbies = await Firestore.instance
+      .collection(FirestoreCollections.multiplayer)
+      .where('players.$playerId', isNotEqualTo: null)
+      .get();
+
+  return lobbies;
+}
+
+Future<void> updatePlayerProgressInLobby({
+  required String lobbyId,
+  required String playerId,
+  required int score,
+  required int round,
+  required int attempts,
+}) async {
+  await Firestore().updateDocument(
+    collectionId: FirestoreCollections.multiplayer,
+    documentId: lobbyId,
+    data: {
+      'players.$playerId.score': score,
+      'players.$playerId.round': round,
+      'players.$playerId.attempts': attempts,
+    },
+  );
+}
 
 Future<Stream<DocumentSnapshot>> start1v1Matchmaking(
   LobbyPlayerInfo playerInfo,
 ) async {
-  final lobbies = await Firestore().getOpen1v1Lobbies();
+  final lobbies = await getOpen1v1Lobbies();
   String? compatibleLobbyId;
 
   for (var lobby in lobbies.docs) {
@@ -25,10 +101,7 @@ Future<Stream<DocumentSnapshot>> start1v1Matchmaking(
       if (opponent.user.id != playerInfo.user.id &&
           opponent.user.rank == playerInfo.user.rank) {
         compatibleLobbyId = lobby.id;
-        await Firestore().joinLobby(
-          lobbyId: compatibleLobbyId,
-          playerInfo: playerInfo,
-        );
+        await joinLobby(lobbyId: compatibleLobbyId, playerInfo: playerInfo);
         break;
       }
     }
@@ -38,9 +111,15 @@ Future<Stream<DocumentSnapshot>> start1v1Matchmaking(
   }
 
   // If compatible lobby is not found, create a new one
-  compatibleLobbyId ??= await Firestore().createLobby(
-    playerCount: 1,
-    playerInfo: playerInfo,
+  compatibleLobbyId ??= await createLobby(
+    lobby: Lobby(
+      id: Uuid().v4(),
+      rounds: 3,
+      wordLength: 5,
+      maxAttempts: 6,
+      playerCount: 1,
+      players: {playerInfo.user.id: playerInfo},
+    ),
   );
 
   // Subscribe to the lobby
@@ -50,4 +129,12 @@ Future<Stream<DocumentSnapshot>> start1v1Matchmaking(
   );
 
   return subscription;
+}
+
+Future<Lobby?> checkForOnGoingMatch({required String playerId}) async {
+  final lobbies = await getLobbyByPlayerId(playerId: playerId);
+  if (lobbies.docs.isEmpty) {
+    return null;
+  }
+  return Lobby.fromJson(lobbies.docs.first.data());
 }
