@@ -1,18 +1,19 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:fpjs_pro_plugin/error.dart';
 import 'package:fpjs_pro_plugin/region.dart';
+import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wibble/components/user_form.dart';
 import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 
 import 'package:wibble/main.dart';
-import 'package:wibble/pages/gameplay.dart';
 import 'package:wibble/types.dart';
 
 class Mainmenu extends StatefulWidget {
@@ -141,17 +142,6 @@ class _MainmenuState extends State<Mainmenu> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.play_arrow),
-                    label: Text("Play"),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => Gameplay()),
-                      );
-                    },
-                    style: buttonStyle,
-                  ),
                   SizedBox(height: 10),
                   ElevatedButton.icon(
                     icon: Icon(Icons.person),
