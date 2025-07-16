@@ -10,6 +10,10 @@ class FirestoreCollections {
 
 enum Rank { bronze, silver, gold, platinum, diamond, master, grandmaster }
 
+enum Routes { mainmenu, gameplay }
+
+enum DialogKeys { gameWon, gameLost, gameTied }
+
 @JsonSerializable(explicitToJson: true)
 class User {
   final String id;

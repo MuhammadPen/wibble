@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/components/clock.dart';
+import 'package:wibble/components/dialog.dart';
 import 'package:wibble/components/keyboard_widget.dart';
 import 'package:wibble/components/word_grid.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
@@ -31,7 +32,10 @@ class GameStatus extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ClockWidget(remainingSeconds: remainingSeconds, totalSeconds: 180),
+          ClockWidget(
+            remainingSeconds: remainingSeconds,
+            totalSeconds: remainingSeconds,
+          ),
           SizedBox(width: 15),
           Expanded(
             child: Column(
@@ -109,7 +113,7 @@ class _GameplayState extends State<Gameplay> {
 
   // Timer variables
   Timer? _gameTimer;
-  int _remainingSeconds = 180; // 3 minutes = 180 seconds
+  int _remainingSeconds = 3; // 3 minutes = 180 seconds
   bool _isTimeUp = false;
 
   @override
@@ -142,36 +146,76 @@ class _GameplayState extends State<Gameplay> {
     });
   }
 
-  void _handleTimeUp() {
-    // Handle what happens when 3 minutes are up
-    // For now, we'll just prevent further input
-    // You can customize this based on your game rules
+  void _handleTimeUp() async {
     setState(() {
       _areAttemptsOver = true;
     });
 
-    // Show a dialog or navigate to results screen
-    _showTimeUpDialog();
-  }
+    final store = context.read<Store>();
 
-  void _showTimeUpDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Time\'s Up!'),
-        content: Text('Game finished! Your final score: $_score'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Go back to main menu
-            },
-            child: const Text('Back to Menu'),
-          ),
-        ],
-      ),
+    // compare score with opponent
+    // Compare the player's score with the opponent's score.
+    // This assumes you have access to the opponent's score via your lobby/store.
+    final lobbyData = context.read<Store>().lobbyData;
+
+    final LobbyPlayerInfo? myPlayer = lobbyData.players[store.user.id];
+    LobbyPlayerInfo? opponent;
+    try {
+      opponent = lobbyData.players.values.firstWhere(
+        (e) => e.user.id != store.user.id,
+      );
+    } catch (e) {
+      print('No opponent found');
+    }
+
+    final int myScore = myPlayer?.score ?? _score;
+    final int opponentScore = opponent?.score ?? 0;
+
+    //leave lobby
+    await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
+    //clear lobby in store
+    store.lobbyData = Lobby(
+      id: '1234567890',
+      rounds: 3,
+      wordLength: 5,
+      maxAttempts: 6,
+      playerCount: 1,
+      players: {},
     );
+
+    if (myScore > opponentScore) {
+      CustomDialog.show(
+        context,
+        dialogKey: DialogKeys.gameWon.name,
+        message: 'You win!',
+        buttonText: 'Back to Menu',
+        onClose: () {
+          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+        },
+      );
+    } else if (myScore < opponentScore) {
+      CustomDialog.show(
+        context,
+        dialogKey: DialogKeys.gameLost.name,
+        message: 'You lost :(',
+        buttonText: 'Back to Menu',
+        onClose: () {
+          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+        },
+      );
+    } else {
+      CustomDialog.show(
+        context,
+        dialogKey: DialogKeys.gameTied.name,
+        message: 'Game tied!',
+        buttonText: 'Back to Menu',
+        onClose: () {
+          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+        },
+      );
+    }
+
+    // show updated ranks
   }
 
   void _selectWord() async {
@@ -399,3 +443,11 @@ class _GameplayState extends State<Gameplay> {
     );
   }
 }
+
+// take action after time is up.
+// compare score with opponent
+// show winner
+// show updated ranks
+// go to main menu
+
+//also I need to add handling if you dont find anyone at your rank, look for someone without rank restriction

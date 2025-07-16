@@ -27,7 +27,10 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         ),
         home: Mainmenu(),
-        routes: {'/gameplay': (context) => Gameplay()},
+        routes: {
+          '/mainmenu': (context) => Mainmenu(),
+          '/gameplay': (context) => Gameplay(),
+        },
       ),
     );
   }
