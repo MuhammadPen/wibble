@@ -4,9 +4,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'types.g.dart';
 
-class FirestoreCollections {
-  static const String multiplayer = 'multiplayer';
-}
+enum FirestoreCollections { users, multiplayer }
 
 enum Rank { bronze, silver, gold, platinum, diamond, master, grandmaster }
 

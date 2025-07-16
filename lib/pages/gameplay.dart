@@ -405,7 +405,7 @@ class _GameplayState extends State<Gameplay> {
         focusNode: _focusNode,
         autofocus: true,
         child: Scaffold(
-          appBar: AppBar(title: const Text('Wibble')),
+          appBar: null,
           body: SafeArea(
             child: Center(
               child: Column(

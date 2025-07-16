@@ -6,7 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:fpjs_pro_plugin/error.dart';
 import 'package:fpjs_pro_plugin/region.dart';
+import 'package:uuid/uuid.dart';
+import 'package:wibble/components/user_form.dart';
 import 'package:wibble/env/env.dart';
+import 'package:wibble/firebase/firebase_utils.dart';
 
 import 'package:wibble/main.dart';
 import 'package:wibble/pages/gameplay.dart';
@@ -60,10 +63,28 @@ class _MainmenuState extends State<Mainmenu> {
       var visitorId = await FpjsProPlugin.getVisitorId();
       var visitorData = await FpjsProPlugin.getVisitorData();
 
-      identifiedUser = visitorData;
+      var user = await getUser(userId: visitorId ?? Uuid().v4());
 
-      print('Visitor ID: $visitorId');
-      print('Visitor data: $visitorData');
+      print(user);
+
+      if (user != null) {
+        identifiedUser = user;
+      } else {
+        UserFormDialog.show(
+          context,
+          onSubmit: (username) async {
+            final user = User(
+              id: visitorId ?? Uuid().v4(),
+              username: username,
+              rank: Rank.bronze,
+              createdAt: DateTime.now(),
+            );
+            await createUser(user: user);
+
+            identifiedUser = user;
+          },
+        );
+      }
     } on FingerprintProError catch (e) {
       // Process the error
       print('Error identifying visitor: $e');
@@ -75,7 +96,9 @@ class _MainmenuState extends State<Mainmenu> {
     final store = Provider.of<Store>(context);
     final isMatchmaking = store.isMatchmaking;
 
-    // store.user = identifiedUser
+    if (identifiedUser != null) {
+      store.user = identifiedUser;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       store.resumeMatch();
@@ -90,7 +113,7 @@ class _MainmenuState extends State<Mainmenu> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text('Wibble')),
+      appBar: null,
       body: Center(
         child: isMatchmaking
             ? Column(
@@ -104,6 +127,20 @@ class _MainmenuState extends State<Mainmenu> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Welcome message
+                  if (store.user.username.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 30),
+                      child: Text(
+                        'Welcome ${store.user.username}!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.blue,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ElevatedButton.icon(
                     icon: Icon(Icons.play_arrow),
                     label: Text("Play"),

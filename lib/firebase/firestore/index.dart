@@ -1,6 +1,4 @@
-import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../types.dart';
 
 class Firestore {
   static FirebaseFirestore get instance => FirebaseFirestore.instance;

@@ -46,8 +46,8 @@ class Store extends ChangeNotifier {
     players: {},
   );
   var user = User(
-    id: 'rrr',
-    username: 'bing bong',
+    id: '',
+    username: '',
     rank: Rank.bronze,
     createdAt: DateTime.now(),
   );

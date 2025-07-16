@@ -1,21 +1,32 @@
-// starts 1v1 matchmaking
-
-// Search multiplayer collection for lobbies with 1 player.
-// In those lobbies, check the existing player info for compatibility.
-// if compatible player is found, join their lobby.
-// Subscribe to the lobby to the lobby.
-
-// If compatible player is not found, create a lobby in multiplayer collection
-// Subscribe to the collection
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wibble/firebase/firestore/index.dart';
 import 'package:wibble/types.dart';
 
+Future<String> createUser({required User user}) async {
+  await Firestore().addDocument(
+    collectionId: FirestoreCollections.users.name,
+    documentId: user.id,
+    data: user.toJson(),
+  );
+  return user.id;
+}
+
+Future<User?> getUser({required String userId}) async {
+  final doc = await Firestore().getDocument(
+    collectionId: FirestoreCollections.users.name,
+    documentId: userId,
+  );
+  if (doc.exists && doc.data() != null) {
+    return User.fromJson(doc.data() as Map<String, dynamic>);
+  } else {
+    return null;
+  }
+}
+
 Future<String> createLobby({required Lobby lobby}) async {
   await Firestore().addDocument(
-    collectionId: FirestoreCollections.multiplayer,
+    collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobby.id,
     data: lobby.toJson(),
   );
@@ -27,7 +38,7 @@ Future<void> joinLobby({
   required LobbyPlayerInfo playerInfo,
 }) async {
   await Firestore().updateDocument(
-    collectionId: FirestoreCollections.multiplayer,
+    collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobbyId,
     data: {
       'players.${playerInfo.user.id}': playerInfo.toJson(),
@@ -41,7 +52,7 @@ Future<void> leaveLobby({
   required String playerId,
 }) async {
   await Firestore().updateDocument(
-    collectionId: FirestoreCollections.multiplayer,
+    collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobbyId,
     data: {
       'players.$playerId': FieldValue.delete(),
@@ -52,7 +63,7 @@ Future<void> leaveLobby({
 
 Future<QuerySnapshot<Map<String, dynamic>>> getOpen1v1Lobbies() async {
   final lobbies = await Firestore.instance
-      .collection(FirestoreCollections.multiplayer)
+      .collection(FirestoreCollections.multiplayer.name)
       .where('playerCount', isEqualTo: 1)
       .get();
 
@@ -63,7 +74,7 @@ Future<QuerySnapshot<Map<String, dynamic>>> getLobbyByPlayerId({
   required String playerId,
 }) async {
   final lobbies = await Firestore.instance
-      .collection(FirestoreCollections.multiplayer)
+      .collection(FirestoreCollections.multiplayer.name)
       .where('players.$playerId', isNotEqualTo: null)
       .get();
 
@@ -78,7 +89,7 @@ Future<void> updatePlayerProgressInLobby({
   required int attempts,
 }) async {
   await Firestore().updateDocument(
-    collectionId: FirestoreCollections.multiplayer,
+    collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobbyId,
     data: {
       'players.$playerId.score': score,
@@ -124,7 +135,7 @@ Future<Stream<DocumentSnapshot>> start1v1Matchmaking(
 
   // Subscribe to the lobby
   final subscription = await Firestore().subscribeToDocument(
-    collectionId: FirestoreCollections.multiplayer,
+    collectionId: FirestoreCollections.multiplayer.name,
     documentId: compatibleLobbyId,
   );
 
