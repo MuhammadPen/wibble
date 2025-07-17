@@ -58,14 +58,16 @@ class Lobby {
   final int wordLength;
   final int maxAttempts;
   final int playerCount;
+  DateTime startTime;
   final Map<String, LobbyPlayerInfo> players;
-  const Lobby({
+  Lobby({
     required this.id,
     required this.rounds,
     required this.wordLength,
     required this.maxAttempts,
     required this.playerCount,
     required this.players,
+    required this.startTime,
   });
 
   // Generated methods:

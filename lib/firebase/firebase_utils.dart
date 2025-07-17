@@ -130,6 +130,7 @@ Future<Stream<DocumentSnapshot>> start1v1Matchmaking(
       maxAttempts: 6,
       playerCount: 1,
       players: {playerInfo.user.id: playerInfo},
+      startTime: DateTime.now(),
     ),
   );
 
@@ -148,4 +149,35 @@ Future<Lobby?> checkForOnGoingMatch({required String playerId}) async {
     return null;
   }
   return Lobby.fromJson(lobbies.docs.first.data());
+}
+
+Future<void> setLobbyStartTime({
+  required String lobbyId,
+  required DateTime startTime,
+}) async {
+  await Firestore().updateDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobbyId,
+    data: {'startTime': startTime},
+  );
+}
+
+Future<DateTime?> getLobbyStartTime({required String lobbyId}) async {
+  var doc = await Firestore().getDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobbyId,
+  );
+
+  if (doc.exists && doc.data() != null) {
+    var data = doc.data() as Map<String, dynamic>;
+    var startTimeData = data['startTime'];
+    if (startTimeData != null) {
+      if (startTimeData is Timestamp) {
+        return startTimeData.toDate();
+      } else if (startTimeData is String) {
+        return DateTime.parse(startTimeData);
+      }
+    }
+  }
+  return null;
 }

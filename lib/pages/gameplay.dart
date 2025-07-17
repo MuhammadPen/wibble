@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/components/clock.dart';
+import 'package:wibble/components/countdown.dart';
 import 'package:wibble/components/dialog.dart';
 import 'package:wibble/components/keyboard_widget.dart';
 import 'package:wibble/components/word_grid.dart';
@@ -53,7 +54,7 @@ class GameStatus extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${playerScore}',
+                      '$playerScore',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -111,6 +112,7 @@ class _GameplayState extends State<Gameplay> {
 
   // Timer variables
   Timer? _gameTimer;
+  final int _roundDuration = 180; // seconds
   int _remainingSeconds = 180; // 3 minutes = 180 seconds
   bool _isTimeUp = false;
 
@@ -120,7 +122,6 @@ class _GameplayState extends State<Gameplay> {
     _initializeGameGrid();
     _selectWord();
     _focusNode = FocusNode();
-    _startGameTimer();
   }
 
   @override
@@ -158,16 +159,30 @@ class _GameplayState extends State<Gameplay> {
     return opponentScore;
   }
 
-  void _startGameTimer() {
+  void _startGameTimer() async {
+    final store = context.read<Store>();
+
+    var lobbyStartTime = await getLobbyStartTime(lobbyId: store.lobbyData.id);
+    if (lobbyStartTime == null) {
+      // set lobby start time
+      store.lobbyData.startTime = DateTime.now();
+      await setLobbyStartTime(
+        lobbyId: store.lobbyData.id,
+        startTime: DateTime.now(),
+      );
+    } else {
+      store.lobbyData.startTime = lobbyStartTime;
+    }
+
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final elapsedTime = DateTime.now().difference(store.lobbyData.startTime);
+      if (_roundDuration - elapsedTime.inSeconds <= 0) {
+        _handleTimeUp();
+        timer.cancel();
+        return;
+      }
       setState(() {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-        } else {
-          _isTimeUp = true;
-          _handleTimeUp();
-          timer.cancel();
-        }
+        _remainingSeconds = _roundDuration - elapsedTime.inSeconds;
       });
     });
   }
@@ -193,6 +208,7 @@ class _GameplayState extends State<Gameplay> {
       maxAttempts: 6,
       playerCount: 1,
       players: {},
+      startTime: DateTime.now(),
     );
 
     if (myScore > opponentScore) {
@@ -325,7 +341,7 @@ class _GameplayState extends State<Gameplay> {
   }
 
   /// Handle enter key press to submit the current word
-  void _handleEnter() {
+  void _handleEnter() async {
     if (!_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
 
     // Add word validation
@@ -349,27 +365,29 @@ class _GameplayState extends State<Gameplay> {
       // select new word
       _selectWord();
     } else {
-      setState(() async {
+      setState(() {
         // Move to the next row
         _cursorPosition[0]++;
         _cursorPosition[1] = 0;
         _isCurrentRowFilled = false;
+      });
 
-        // Check if we've reached the maximum number of attempts
-        if (_cursorPosition[0] >= _guessGrid.length) {
-          _showCurrentWord = true;
-          // wait for 3 seconds
-          await Future.delayed(const Duration(seconds: 3), () {
-            _showCurrentWord = false;
-          });
+      // Check if we've reached the maximum number of attempts
+      if (_cursorPosition[0] >= _guessGrid.length) {
+        _showCurrentWord = true;
+        // wait for 3 seconds
+        await Future.delayed(const Duration(seconds: 3), () {
+          _showCurrentWord = false;
+        });
+        setState(() {
           _cursorPosition[0] = 0;
           _cursorPosition[1] = 0;
-          _selectWord();
-          _initializeGameGrid();
+        });
+        _selectWord();
+        _initializeGameGrid();
 
-          // _areAttemptsOver = true;
-        }
-      });
+        // _areAttemptsOver = true;
+      }
     }
 
     // update player progress in lobby
@@ -444,6 +462,12 @@ class _GameplayState extends State<Gameplay> {
                     opponent: opponent,
                   ),
                   SizedBox(height: 20),
+                  CountdownWidget(
+                    durationInSeconds: 3,
+                    onCountdownComplete: () {
+                      _startGameTimer();
+                    },
+                  ),
                   if (_showCurrentWord)
                     Text(
                       'Word was: $_currentWord',

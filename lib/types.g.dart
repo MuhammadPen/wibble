@@ -55,6 +55,7 @@ Lobby _$LobbyFromJson(Map<String, dynamic> json) => Lobby(
   players: (json['players'] as Map<String, dynamic>).map(
     (k, e) => MapEntry(k, LobbyPlayerInfo.fromJson(e as Map<String, dynamic>)),
   ),
+  startTime: DateTime.parse(json['startTime'] as String),
 );
 
 Map<String, dynamic> _$LobbyToJson(Lobby instance) => <String, dynamic>{
@@ -63,5 +64,6 @@ Map<String, dynamic> _$LobbyToJson(Lobby instance) => <String, dynamic>{
   'wordLength': instance.wordLength,
   'maxAttempts': instance.maxAttempts,
   'playerCount': instance.playerCount,
+  'startTime': instance.startTime.toIso8601String(),
   'players': instance.players.map((k, e) => MapEntry(k, e.toJson())),
 };

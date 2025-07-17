@@ -44,6 +44,7 @@ class Store extends ChangeNotifier {
     maxAttempts: 6,
     playerCount: 1,
     players: {},
+    startTime: DateTime.now(),
   );
   var user = User(
     id: '',
