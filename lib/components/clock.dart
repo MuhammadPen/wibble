@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
 
 class ClockWidget extends StatelessWidget {
   final int remainingSeconds;
@@ -12,12 +13,6 @@ class ClockWidget extends StatelessWidget {
     required this.totalSeconds,
     this.size = 64,
   });
-
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final secs = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +44,12 @@ class ClockWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 }
 

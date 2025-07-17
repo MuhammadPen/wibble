@@ -5,16 +5,6 @@ import 'package:wibble/types.dart';
 class HowToPlayDialog {
   static final _dialogKey = DialogKeys.howToPlay.name;
 
-  /// Show the How to Play dialog
-  static Future<void> show(BuildContext context) {
-    return CustomDialog.show(
-      context,
-      dialogKey: _dialogKey,
-      message: _getGameExplanation(),
-      buttonText: 'Got it!',
-    );
-  }
-
   /// Hide the How to Play dialog
   static bool hide() {
     return CustomDialog.hide(_dialogKey);
@@ -23,6 +13,16 @@ class HowToPlayDialog {
   /// Check if the How to Play dialog is currently open
   static bool isOpen() {
     return CustomDialog.isOpen(_dialogKey);
+  }
+
+  /// Show the How to Play dialog
+  static Future<void> show(BuildContext context) {
+    return CustomDialog.show(
+      context,
+      dialogKey: _dialogKey,
+      message: _getGameExplanation(),
+      buttonText: 'Got it!',
+    );
   }
 
   /// Get the concise game explanation

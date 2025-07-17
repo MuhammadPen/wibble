@@ -29,38 +29,6 @@ class _UserFormDialogState extends State<UserFormDialog> {
   bool _isSubmitEnabled = false;
 
   @override
-  void initState() {
-    super.initState();
-    _usernameController.addListener(_updateSubmitButtonState);
-  }
-
-  @override
-  void dispose() {
-    _usernameController.removeListener(_updateSubmitButtonState);
-    _usernameController.dispose();
-    super.dispose();
-  }
-
-  void _updateSubmitButtonState() {
-    final username = _usernameController.text.trim();
-    final isValid = username.isNotEmpty;
-
-    if (isValid != _isSubmitEnabled) {
-      setState(() {
-        _isSubmitEnabled = isValid;
-      });
-    }
-  }
-
-  void _handleSubmit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      final username = _usernameController.text.trim();
-      Navigator.of(context).pop(); // Only way to dismiss the dialog
-      widget.onSubmit(username);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false, // Prevents back button dismissal
@@ -90,6 +58,19 @@ class _UserFormDialogState extends State<UserFormDialog> {
     );
   }
 
+  @override
+  void dispose() {
+    _usernameController.removeListener(_updateSubmitButtonState);
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameController.addListener(_updateSubmitButtonState);
+  }
+
   Widget _buildUsernameField() {
     return TextFormField(
       controller: _usernameController,
@@ -115,6 +96,25 @@ class _UserFormDialogState extends State<UserFormDialog> {
         }
       },
     );
+  }
+
+  void _handleSubmit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final username = _usernameController.text.trim();
+      Navigator.of(context).pop(); // Only way to dismiss the dialog
+      widget.onSubmit(username);
+    }
+  }
+
+  void _updateSubmitButtonState() {
+    final username = _usernameController.text.trim();
+    final isValid = username.isNotEmpty;
+
+    if (isValid != _isSubmitEnabled) {
+      setState(() {
+        _isSubmitEnabled = isValid;
+      });
+    }
   }
 
   // Example of how to add future fields - just uncomment and modify as needed

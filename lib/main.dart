@@ -1,12 +1,14 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/pages/gameplay.dart';
 import 'package:wibble/pages/mainmenu.dart';
 import 'package:wibble/pages/privateLobby.dart';
 import 'package:wibble/types.dart';
-import 'package:wibble/firebase/firebase_utils.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';
+
 import 'firebase/index.dart';
 
 void main() async {
@@ -67,6 +69,28 @@ class Store extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Cancel the subscription
+  void cancelLobbySubscription() {
+    lobbySubscription?.cancel();
+    lobbySubscription = null;
+    _isMatchmaking = false;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    lobbySubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> resumeMatch() async {
+    final lobby = await checkForOnGoingMatch(playerId: user.id);
+    if (lobby != null) {
+      lobbyData = lobby;
+      notifyListeners();
+    }
+  }
+
   // Start matchmaking and manage subscription
   Future<void> searchForGame({required LobbyType type}) async {
     _isMatchmaking = true;
@@ -92,27 +116,5 @@ class Store extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
-  }
-
-  // Cancel the subscription
-  void cancelLobbySubscription() {
-    lobbySubscription?.cancel();
-    lobbySubscription = null;
-    _isMatchmaking = false;
-    notifyListeners();
-  }
-
-  Future<void> resumeMatch() async {
-    final lobby = await checkForOnGoingMatch(playerId: user.id);
-    if (lobby != null) {
-      lobbyData = lobby;
-      notifyListeners();
-    }
-  }
-
-  @override
-  void dispose() {
-    lobbySubscription?.cancel();
-    super.dispose();
   }
 }

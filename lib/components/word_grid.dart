@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 class WordGrid extends StatelessWidget {
+  final List<List<String>> guessGrid;
+
+  final List<int> cursorPosition;
+  final bool isWordComplete;
+  final String targetWord;
   const WordGrid({
     super.key,
     required this.guessGrid,
@@ -8,56 +13,6 @@ class WordGrid extends StatelessWidget {
     required this.isWordComplete,
     required this.targetWord,
   });
-
-  final List<List<String>> guessGrid;
-  final List<int> cursorPosition;
-  final bool isWordComplete;
-  final String targetWord;
-
-  /// Check if this cell is the current active cell
-  bool _isCurrentCell(int row, int column) {
-    return cursorPosition[0] == row && cursorPosition[1] == column;
-  }
-
-  /// Get the background color for a cell based on Wordle rules
-  Color _getCellBackgroundColor(int row, int col) {
-    // Only apply coloring to completed rows (rows less than cursor row)
-    if (row >= cursorPosition[0]) {
-      return Colors.transparent;
-    }
-
-    final String guessedLetter = guessGrid[row][col].toLowerCase();
-    final String targetWordLower = targetWord.toLowerCase();
-
-    // If the cell is empty, return transparent
-    if (guessedLetter.isEmpty) {
-      return Colors.transparent;
-    }
-
-    // Check if letter is in correct position (green)
-    if (col < targetWordLower.length && guessedLetter == targetWordLower[col]) {
-      return Colors.green.withValues(alpha: 0.8);
-    }
-
-    // Check if letter is in the word but wrong position (yellow)
-    if (targetWordLower.contains(guessedLetter)) {
-      return Colors.yellow.withValues(alpha: 0.8);
-    }
-
-    // Letter is not in the word (light grey)
-    return Colors.grey[300]!;
-  }
-
-  /// Get the text color for a cell based on background
-  Color _getCellTextColor(int row, int col) {
-    final backgroundColor = _getCellBackgroundColor(row, col);
-
-    // Use white text for colored backgrounds, black for transparent
-    if (backgroundColor == Colors.transparent) {
-      return Colors.black;
-    }
-    return Colors.white;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,5 +93,50 @@ class WordGrid extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Get the background color for a cell based on Wordle rules
+  Color _getCellBackgroundColor(int row, int col) {
+    // Only apply coloring to completed rows (rows less than cursor row)
+    if (row >= cursorPosition[0]) {
+      return Colors.transparent;
+    }
+
+    final String guessedLetter = guessGrid[row][col].toLowerCase();
+    final String targetWordLower = targetWord.toLowerCase();
+
+    // If the cell is empty, return transparent
+    if (guessedLetter.isEmpty) {
+      return Colors.transparent;
+    }
+
+    // Check if letter is in correct position (green)
+    if (col < targetWordLower.length && guessedLetter == targetWordLower[col]) {
+      return Colors.green.withValues(alpha: 0.8);
+    }
+
+    // Check if letter is in the word but wrong position (yellow)
+    if (targetWordLower.contains(guessedLetter)) {
+      return Colors.yellow.withValues(alpha: 0.8);
+    }
+
+    // Letter is not in the word (light grey)
+    return Colors.grey[300]!;
+  }
+
+  /// Get the text color for a cell based on background
+  Color _getCellTextColor(int row, int col) {
+    final backgroundColor = _getCellBackgroundColor(row, col);
+
+    // Use white text for colored backgrounds, black for transparent
+    if (backgroundColor == Colors.transparent) {
+      return Colors.black;
+    }
+    return Colors.white;
+  }
+
+  /// Check if this cell is the current active cell
+  bool _isCurrentCell(int row, int column) {
+    return cursorPosition[0] == row && cursorPosition[1] == column;
   }
 }

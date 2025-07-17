@@ -3,6 +3,23 @@ import 'package:uuid/uuid.dart';
 import 'package:wibble/firebase/firestore/index.dart';
 import 'package:wibble/types.dart';
 
+Future<Lobby?> checkForOnGoingMatch({required String playerId}) async {
+  final lobbies = await getLobbyByPlayerId(playerId: playerId);
+  if (lobbies.docs.isEmpty) {
+    return null;
+  }
+  return Lobby.fromJson(lobbies.docs.first.data());
+}
+
+Future<String> createLobby({required Lobby lobby}) async {
+  await Firestore().addDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobby.id,
+    data: lobby.toJson(),
+  );
+  return lobby.id;
+}
+
 Future<String> createUser({required User user}) async {
   await Firestore().addDocument(
     collectionId: FirestoreCollections.users.name,
@@ -10,6 +27,54 @@ Future<String> createUser({required User user}) async {
     data: user.toJson(),
   );
   return user.id;
+}
+
+Future<QuerySnapshot<Map<String, dynamic>>> getLobbyByPlayerId({
+  required String playerId,
+}) async {
+  final lobbies = await Firestore.instance
+      .collection(FirestoreCollections.multiplayer.name)
+      .where('players.$playerId', isNotEqualTo: null)
+      .get();
+
+  return lobbies;
+}
+
+Future<DateTime?> getLobbyStartTime({required String lobbyId}) async {
+  var doc = await Firestore().getDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobbyId,
+  );
+
+  if (doc.exists && doc.data() != null) {
+    var data = doc.data() as Map<String, dynamic>;
+    var startTimeData = data['startTime'];
+    if (startTimeData != null) {
+      if (startTimeData is Timestamp) {
+        return startTimeData.toDate();
+      } else if (startTimeData is String) {
+        return DateTime.parse(startTimeData);
+      }
+    }
+  }
+  return null;
+}
+
+Future<QuerySnapshot<Map<String, dynamic>>?> getOpenLobbies({
+  required LobbyType type,
+}) async {
+  final lobbies = await Firestore.instance
+      .collection(FirestoreCollections.multiplayer.name)
+      .where('type', isEqualTo: type.name)
+      .where('playerCount', isLessThan: type == LobbyType.oneVOne ? 2 : 5)
+      .orderBy('startTime', descending: false)
+      .get();
+
+  if (lobbies.docs.isEmpty) {
+    return null;
+  }
+
+  return lobbies;
 }
 
 Future<User?> getUser({required String userId}) async {
@@ -22,15 +87,6 @@ Future<User?> getUser({required String userId}) async {
   } else {
     return null;
   }
-}
-
-Future<String> createLobby({required Lobby lobby}) async {
-  await Firestore().addDocument(
-    collectionId: FirestoreCollections.multiplayer.name,
-    documentId: lobby.id,
-    data: lobby.toJson(),
-  );
-  return lobby.id;
 }
 
 Future<void> joinLobby({
@@ -66,49 +122,14 @@ Future<void> leaveLobby({
   );
 }
 
-Future<QuerySnapshot<Map<String, dynamic>>?> getOpenLobbies({
-  required LobbyType type,
-}) async {
-  final lobbies = await Firestore.instance
-      .collection(FirestoreCollections.multiplayer.name)
-      .where('type', isEqualTo: type.name)
-      .where('playerCount', isLessThan: type == LobbyType.oneVOne ? 2 : 5)
-      .orderBy('startTime', descending: false)
-      .get();
-
-  if (lobbies.docs.isEmpty) {
-    return null;
-  }
-
-  return lobbies;
-}
-
-Future<QuerySnapshot<Map<String, dynamic>>> getLobbyByPlayerId({
-  required String playerId,
-}) async {
-  final lobbies = await Firestore.instance
-      .collection(FirestoreCollections.multiplayer.name)
-      .where('players.$playerId', isNotEqualTo: null)
-      .get();
-
-  return lobbies;
-}
-
-Future<void> updatePlayerProgressInLobby({
+Future<void> setLobbyStartTime({
   required String lobbyId,
-  required String playerId,
-  required int score,
-  required int round,
-  required int attempts,
+  required DateTime startTime,
 }) async {
   await Firestore().updateDocument(
     collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobbyId,
-    data: {
-      'players.$playerId.score': score,
-      'players.$playerId.round': round,
-      'players.$playerId.attempts': attempts,
-    },
+    data: {'startTime': startTime},
   );
 }
 
@@ -171,41 +192,20 @@ Future<Stream<DocumentSnapshot>> startMatchmaking({
   return subscription;
 }
 
-Future<Lobby?> checkForOnGoingMatch({required String playerId}) async {
-  final lobbies = await getLobbyByPlayerId(playerId: playerId);
-  if (lobbies.docs.isEmpty) {
-    return null;
-  }
-  return Lobby.fromJson(lobbies.docs.first.data());
-}
-
-Future<void> setLobbyStartTime({
+Future<void> updatePlayerProgressInLobby({
   required String lobbyId,
-  required DateTime startTime,
+  required String playerId,
+  required int score,
+  required int round,
+  required int attempts,
 }) async {
   await Firestore().updateDocument(
     collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobbyId,
-    data: {'startTime': startTime},
+    data: {
+      'players.$playerId.score': score,
+      'players.$playerId.round': round,
+      'players.$playerId.attempts': attempts,
+    },
   );
-}
-
-Future<DateTime?> getLobbyStartTime({required String lobbyId}) async {
-  var doc = await Firestore().getDocument(
-    collectionId: FirestoreCollections.multiplayer.name,
-    documentId: lobbyId,
-  );
-
-  if (doc.exists && doc.data() != null) {
-    var data = doc.data() as Map<String, dynamic>;
-    var startTimeData = data['startTime'];
-    if (startTimeData != null) {
-      if (startTimeData is Timestamp) {
-        return startTimeData.toDate();
-      } else if (startTimeData is String) {
-        return DateTime.parse(startTimeData);
-      }
-    }
-  }
-  return null;
 }

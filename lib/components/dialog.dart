@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class CustomDialog extends StatelessWidget {
-  final String message;
-  final VoidCallback? onClose;
-  final String buttonText;
-  final String dialogKey;
-
   // Static map to track open dialogs by their keys
   static final Map<String, BuildContext> _openDialogs =
       <String, BuildContext>{};
+  final String message;
+  final VoidCallback? onClose;
+  final String buttonText;
+
+  final String dialogKey;
 
   const CustomDialog({
     Key? key,
@@ -17,6 +17,54 @@ class CustomDialog extends StatelessWidget {
     this.onClose,
     this.buttonText = 'Close',
   }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      content: Text(message, style: const TextStyle(fontSize: 16)),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _openDialogs.remove(dialogKey);
+            if (onClose != null) {
+              onClose!();
+            }
+          },
+          child: Text(buttonText),
+        ),
+      ],
+    );
+  }
+
+  // Static method to get all open dialog keys
+  static List<String> getOpenDialogKeys() {
+    return _openDialogs.keys.toList();
+  }
+
+  // Static method to hide a specific dialog by key
+  static bool hide(String dialogKey) {
+    final dialogContext = _openDialogs[dialogKey];
+    if (dialogContext != null && Navigator.canPop(dialogContext)) {
+      Navigator.of(dialogContext).pop();
+      _openDialogs.remove(dialogKey);
+      return true; // Successfully closed
+    }
+    return false; // Dialog not found or couldn't be closed
+  }
+
+  // Static method to hide all open dialogs
+  static void hideAll() {
+    final keys = _openDialogs.keys.toList();
+    for (final key in keys) {
+      hide(key);
+    }
+  }
+
+  // Static method to check if a dialog with specific key is open
+  static bool isOpen(String dialogKey) {
+    return _openDialogs.containsKey(dialogKey);
+  }
 
   // Static method to show the dialog with a unique key
   static Future<void> show(
@@ -56,53 +104,5 @@ class CustomDialog extends StatelessWidget {
       // Ensure cleanup when dialog completes
       _openDialogs.remove(dialogKey);
     });
-  }
-
-  // Static method to hide a specific dialog by key
-  static bool hide(String dialogKey) {
-    final dialogContext = _openDialogs[dialogKey];
-    if (dialogContext != null && Navigator.canPop(dialogContext)) {
-      Navigator.of(dialogContext).pop();
-      _openDialogs.remove(dialogKey);
-      return true; // Successfully closed
-    }
-    return false; // Dialog not found or couldn't be closed
-  }
-
-  // Static method to hide all open dialogs
-  static void hideAll() {
-    final keys = _openDialogs.keys.toList();
-    for (final key in keys) {
-      hide(key);
-    }
-  }
-
-  // Static method to check if a dialog with specific key is open
-  static bool isOpen(String dialogKey) {
-    return _openDialogs.containsKey(dialogKey);
-  }
-
-  // Static method to get all open dialog keys
-  static List<String> getOpenDialogKeys() {
-    return _openDialogs.keys.toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      content: Text(message, style: const TextStyle(fontSize: 16)),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _openDialogs.remove(dialogKey);
-            if (onClose != null) {
-              onClose!();
-            }
-          },
-          child: Text(buttonText),
-        ),
-      ],
-    );
   }
 }

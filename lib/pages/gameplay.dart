@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/components/clock.dart';
@@ -8,7 +10,13 @@ import 'package:wibble/components/word_grid.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/types.dart';
-import 'dart:async';
+
+class Gameplay extends StatefulWidget {
+  const Gameplay({super.key});
+
+  @override
+  State<Gameplay> createState() => _GameplayState();
+}
 
 class GameStatus extends StatelessWidget {
   final int remainingSeconds;
@@ -91,13 +99,6 @@ class GameStatus extends StatelessWidget {
   }
 }
 
-class Gameplay extends StatefulWidget {
-  const Gameplay({super.key});
-
-  @override
-  State<Gameplay> createState() => _GameplayState();
-}
-
 class _GameplayState extends State<Gameplay> {
   // Game state variables
   List<List<String>> _guessGrid = [];
@@ -116,295 +117,6 @@ class _GameplayState extends State<Gameplay> {
   final int _roundDuration = 180; // seconds
   int _remainingSeconds = 180; // 3 minutes = 180 seconds
   bool _isTimeUp = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeGameGrid();
-    _selectWord();
-    _focusNode = FocusNode();
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _gameTimer?.cancel();
-    super.dispose();
-  }
-
-  int _getPlayerScore() {
-    final store = context.read<Store>();
-    final lobbyData = context.read<Store>().lobbyData;
-
-    final LobbyPlayerInfo? myPlayer = lobbyData.players[store.user.id];
-
-    final int myScore = myPlayer?.score ?? _score;
-
-    return myScore;
-  }
-
-  int _getOpponentScore() {
-    final store = context.read<Store>();
-    final lobbyData = context.read<Store>().lobbyData;
-
-    LobbyPlayerInfo? opponent;
-    try {
-      opponent = lobbyData.players.values.firstWhere(
-        (e) => e.user.id != store.user.id,
-      );
-    } catch (e) {
-      print('No opponent found');
-    }
-    final int opponentScore = opponent?.score ?? 0;
-
-    return opponentScore;
-  }
-
-  void _startGameTimer() async {
-    final store = context.read<Store>();
-
-    var lobbyStartTime = await getLobbyStartTime(lobbyId: store.lobbyData.id);
-    if (lobbyStartTime == null) {
-      // set lobby start time
-      store.lobbyData.startTime = DateTime.now();
-      await setLobbyStartTime(
-        lobbyId: store.lobbyData.id,
-        startTime: DateTime.now(),
-      );
-    } else {
-      store.lobbyData.startTime = lobbyStartTime;
-    }
-
-    _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final elapsedTime = DateTime.now().difference(store.lobbyData.startTime);
-      if (_roundDuration - elapsedTime.inSeconds <= 0) {
-        _handleTimeUp();
-        timer.cancel();
-        return;
-      }
-      setState(() {
-        _remainingSeconds = _roundDuration - elapsedTime.inSeconds;
-      });
-    });
-  }
-
-  void _handleTimeUp() async {
-    setState(() {
-      _areAttemptsOver = true;
-    });
-
-    final store = context.read<Store>();
-    final lobbyData = store.lobbyData;
-
-    final int myScore = _getPlayerScore();
-    final int opponentScore = _getOpponentScore();
-
-    //leave lobby
-    await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
-    //clear lobby in store
-    store.lobbyData = Lobby(
-      id: '',
-      rounds: 3,
-      wordLength: 5,
-      maxAttempts: 6,
-      playerCount: 1,
-      players: {},
-      startTime: DateTime.now(),
-      maxPlayers: 2,
-      type: LobbyType.oneVOne,
-    );
-
-    if (myScore > opponentScore) {
-      CustomDialog.show(
-        context,
-        dialogKey: DialogKeys.gameWon.name,
-        message: 'You win!',
-        buttonText: 'Back to Menu',
-        onClose: () {
-          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
-        },
-      );
-    } else if (myScore < opponentScore) {
-      CustomDialog.show(
-        context,
-        dialogKey: DialogKeys.gameLost.name,
-        message: 'You lost :(',
-        buttonText: 'Back to Menu',
-        onClose: () {
-          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
-        },
-      );
-    } else {
-      CustomDialog.show(
-        context,
-        dialogKey: DialogKeys.gameTied.name,
-        message: 'Game tied!',
-        buttonText: 'Back to Menu',
-        onClose: () {
-          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
-        },
-      );
-    }
-
-    // show updated ranks
-  }
-
-  void _selectWord() async {
-    final String wordList = await DefaultAssetBundle.of(
-      context,
-    ).loadString('lib/assets/5-letter-words.txt');
-    final List<String> words = wordList.split('\n');
-    setState(() {
-      _currentWord = words[DateTime.now().millisecondsSinceEpoch % words.length]
-          .toUpperCase();
-    });
-  }
-
-  void _updateScore() {
-    final store = context.read<Store>();
-    final lobbyData = store.lobbyData;
-
-    final attemptsUsed =
-        _cursorPosition[0] + 1; // +1 because cursor position is 0-indexed
-
-    // Calculate score based on attempts used
-    // Formula: 100 - ((attemptsUsed - 1) * (100 / (maxAttempts + 1)))
-    // This gives 100 points for 1 attempt, decreasing linearly
-    final int scoreForThisWord =
-        (100 - ((attemptsUsed - 1) * (100 / (lobbyData.maxAttempts + 1))))
-            .round();
-
-    setState(() {
-      // there is a better way to do this, but this is a quick fix
-      // _score is for local calculations and display, lobbyData is for sending over to the other player
-      _score += scoreForThisWord;
-      lobbyData.players[store.user.id]?.score += scoreForThisWord;
-    });
-  }
-
-  /// Initialize the game grid based on lobby settings
-  void _initializeGameGrid() {
-    final appStore = context.read<Store>();
-    final wordLength = appStore.lobbyData.wordLength;
-    final maxAttempts = appStore.lobbyData.maxAttempts;
-
-    _guessGrid = List.generate(
-      maxAttempts,
-      (_) => List.generate(wordLength, (_) => ""),
-    );
-  }
-
-  /// Handle key press from the keyboard
-  void _handleKeyTap(String key) {
-    if (_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
-
-    setState(() {
-      final wordLength = _guessGrid[0].length;
-      final isAtEndOfWord = _cursorPosition[1] == wordLength;
-
-      if (!isAtEndOfWord) {
-        _guessGrid[_cursorPosition[0]][_cursorPosition[1]] = key;
-        _cursorPosition[1]++;
-
-        // Check if word is now complete
-        if (_cursorPosition[1] == wordLength) {
-          _isCurrentRowFilled = true;
-        }
-      }
-    });
-  }
-
-  /// Handle delete key press
-  void _handleDelete() {
-    if (_isTimeUp) return;
-
-    final wordLength = _guessGrid[0].length;
-    final isAtStartOfWord = _cursorPosition[1] == 0;
-    final isAtEndOfWord = _cursorPosition[1] == wordLength;
-
-    setState(() {
-      if (isAtStartOfWord) {
-        // At start, just clear the current position
-        _guessGrid[_cursorPosition[0]][_cursorPosition[1]] = "";
-      } else {
-        // Delete the previous character
-        // at the end of a word, the cursor index is 1 more than the word length. so we move it back by 1
-        final columnToDelete = isAtEndOfWord
-            ? _cursorPosition[1] - 1
-            : _cursorPosition[1];
-        _guessGrid[_cursorPosition[0]][columnToDelete] = "";
-        _cursorPosition[1]--;
-
-        // If we were at the end of a complete word, mark it as incomplete
-        if (isAtEndOfWord) {
-          _isCurrentRowFilled = false;
-        }
-      }
-    });
-  }
-
-  /// Handle enter key press to submit the current word
-  void _handleEnter() async {
-    if (!_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
-
-    // Add word validation
-    var currentAttemptArray = _guessGrid[_cursorPosition[0]];
-    var currentAttempt = currentAttemptArray.join('');
-
-    // correct attempt
-    if (currentAttempt == _currentWord) {
-      // update score
-      _updateScore();
-      // increment round
-      // reset game state
-      setState(() {
-        _currentRound++;
-        _cursorPosition[0] = 0;
-        _cursorPosition[1] = 0;
-        _isCurrentRowFilled = false;
-        _areAttemptsOver = false;
-      });
-      _initializeGameGrid();
-      // select new word
-      _selectWord();
-    } else {
-      setState(() {
-        // Move to the next row
-        _cursorPosition[0]++;
-        _cursorPosition[1] = 0;
-        _isCurrentRowFilled = false;
-      });
-
-      // Check if we've reached the maximum number of attempts
-      if (_cursorPosition[0] >= _guessGrid.length) {
-        _showCurrentWord = true;
-        // wait for 3 seconds
-        await Future.delayed(const Duration(seconds: 3), () {
-          _showCurrentWord = false;
-        });
-        setState(() {
-          _cursorPosition[0] = 0;
-          _cursorPosition[1] = 0;
-        });
-        _selectWord();
-        _initializeGameGrid();
-
-        // _areAttemptsOver = true;
-      }
-    }
-
-    // update player progress in lobby
-    // if the lobby doesnt exist this will just error out. can ignore that
-    updatePlayerProgressInLobby(
-      lobbyId: context.read<Store>().lobbyData.id,
-      playerId: context.read<Store>().user.id,
-      score: _getPlayerScore(),
-      round: _currentRound,
-      attempts: _cursorPosition[0] + 1,
-    ).catchError((error) {
-      print('Failed to update progress: $error');
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -505,6 +217,295 @@ class _GameplayState extends State<Gameplay> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _gameTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeGameGrid();
+    _selectWord();
+    _focusNode = FocusNode();
+  }
+
+  int _getOpponentScore() {
+    final store = context.read<Store>();
+    final lobbyData = context.read<Store>().lobbyData;
+
+    LobbyPlayerInfo? opponent;
+    try {
+      opponent = lobbyData.players.values.firstWhere(
+        (e) => e.user.id != store.user.id,
+      );
+    } catch (e) {
+      print('No opponent found');
+    }
+    final int opponentScore = opponent?.score ?? 0;
+
+    return opponentScore;
+  }
+
+  int _getPlayerScore() {
+    final store = context.read<Store>();
+    final lobbyData = context.read<Store>().lobbyData;
+
+    final LobbyPlayerInfo? myPlayer = lobbyData.players[store.user.id];
+
+    final int myScore = myPlayer?.score ?? _score;
+
+    return myScore;
+  }
+
+  /// Handle delete key press
+  void _handleDelete() {
+    if (_isTimeUp) return;
+
+    final wordLength = _guessGrid[0].length;
+    final isAtStartOfWord = _cursorPosition[1] == 0;
+    final isAtEndOfWord = _cursorPosition[1] == wordLength;
+
+    setState(() {
+      if (isAtStartOfWord) {
+        // At start, just clear the current position
+        _guessGrid[_cursorPosition[0]][_cursorPosition[1]] = "";
+      } else {
+        // Delete the previous character
+        // at the end of a word, the cursor index is 1 more than the word length. so we move it back by 1
+        final columnToDelete = isAtEndOfWord
+            ? _cursorPosition[1] - 1
+            : _cursorPosition[1];
+        _guessGrid[_cursorPosition[0]][columnToDelete] = "";
+        _cursorPosition[1]--;
+
+        // If we were at the end of a complete word, mark it as incomplete
+        if (isAtEndOfWord) {
+          _isCurrentRowFilled = false;
+        }
+      }
+    });
+  }
+
+  /// Handle enter key press to submit the current word
+  void _handleEnter() async {
+    if (!_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
+
+    // Add word validation
+    var currentAttemptArray = _guessGrid[_cursorPosition[0]];
+    var currentAttempt = currentAttemptArray.join('');
+
+    // correct attempt
+    if (currentAttempt == _currentWord) {
+      // update score
+      _updateScore();
+      // increment round
+      // reset game state
+      setState(() {
+        _currentRound++;
+        _cursorPosition[0] = 0;
+        _cursorPosition[1] = 0;
+        _isCurrentRowFilled = false;
+        _areAttemptsOver = false;
+      });
+      _initializeGameGrid();
+      // select new word
+      _selectWord();
+    } else {
+      setState(() {
+        // Move to the next row
+        _cursorPosition[0]++;
+        _cursorPosition[1] = 0;
+        _isCurrentRowFilled = false;
+      });
+
+      // Check if we've reached the maximum number of attempts
+      if (_cursorPosition[0] >= _guessGrid.length) {
+        _showCurrentWord = true;
+        // wait for 3 seconds
+        await Future.delayed(const Duration(seconds: 3), () {
+          _showCurrentWord = false;
+        });
+        setState(() {
+          _cursorPosition[0] = 0;
+          _cursorPosition[1] = 0;
+        });
+        _selectWord();
+        _initializeGameGrid();
+
+        // _areAttemptsOver = true;
+      }
+    }
+
+    // update player progress in lobby
+    // if the lobby doesnt exist this will just error out. can ignore that
+    updatePlayerProgressInLobby(
+      lobbyId: context.read<Store>().lobbyData.id,
+      playerId: context.read<Store>().user.id,
+      score: _getPlayerScore(),
+      round: _currentRound,
+      attempts: _cursorPosition[0] + 1,
+    ).catchError((error) {
+      print('Failed to update progress: $error');
+    });
+  }
+
+  /// Handle key press from the keyboard
+  void _handleKeyTap(String key) {
+    if (_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
+
+    setState(() {
+      final wordLength = _guessGrid[0].length;
+      final isAtEndOfWord = _cursorPosition[1] == wordLength;
+
+      if (!isAtEndOfWord) {
+        _guessGrid[_cursorPosition[0]][_cursorPosition[1]] = key;
+        _cursorPosition[1]++;
+
+        // Check if word is now complete
+        if (_cursorPosition[1] == wordLength) {
+          _isCurrentRowFilled = true;
+        }
+      }
+    });
+  }
+
+  void _handleTimeUp() async {
+    setState(() {
+      _areAttemptsOver = true;
+    });
+
+    final store = context.read<Store>();
+    final lobbyData = store.lobbyData;
+
+    final int myScore = _getPlayerScore();
+    final int opponentScore = _getOpponentScore();
+
+    //leave lobby
+    await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
+    //clear lobby in store
+    store.lobbyData = Lobby(
+      id: '',
+      rounds: 3,
+      wordLength: 5,
+      maxAttempts: 6,
+      playerCount: 1,
+      players: {},
+      startTime: DateTime.now(),
+      maxPlayers: 2,
+      type: LobbyType.oneVOne,
+    );
+
+    if (myScore > opponentScore) {
+      CustomDialog.show(
+        context,
+        dialogKey: DialogKeys.gameWon.name,
+        message: 'You win!',
+        buttonText: 'Back to Menu',
+        onClose: () {
+          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+        },
+      );
+    } else if (myScore < opponentScore) {
+      CustomDialog.show(
+        context,
+        dialogKey: DialogKeys.gameLost.name,
+        message: 'You lost :(',
+        buttonText: 'Back to Menu',
+        onClose: () {
+          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+        },
+      );
+    } else {
+      CustomDialog.show(
+        context,
+        dialogKey: DialogKeys.gameTied.name,
+        message: 'Game tied!',
+        buttonText: 'Back to Menu',
+        onClose: () {
+          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+        },
+      );
+    }
+
+    // show updated ranks
+  }
+
+  /// Initialize the game grid based on lobby settings
+  void _initializeGameGrid() {
+    final appStore = context.read<Store>();
+    final wordLength = appStore.lobbyData.wordLength;
+    final maxAttempts = appStore.lobbyData.maxAttempts;
+
+    _guessGrid = List.generate(
+      maxAttempts,
+      (_) => List.generate(wordLength, (_) => ""),
+    );
+  }
+
+  void _selectWord() async {
+    final String wordList = await DefaultAssetBundle.of(
+      context,
+    ).loadString('lib/assets/5-letter-words.txt');
+    final List<String> words = wordList.split('\n');
+    setState(() {
+      _currentWord = words[DateTime.now().millisecondsSinceEpoch % words.length]
+          .toUpperCase();
+    });
+  }
+
+  void _startGameTimer() async {
+    final store = context.read<Store>();
+
+    var lobbyStartTime = await getLobbyStartTime(lobbyId: store.lobbyData.id);
+    if (lobbyStartTime == null) {
+      // set lobby start time
+      store.lobbyData.startTime = DateTime.now();
+      await setLobbyStartTime(
+        lobbyId: store.lobbyData.id,
+        startTime: DateTime.now(),
+      );
+    } else {
+      store.lobbyData.startTime = lobbyStartTime;
+    }
+
+    _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final elapsedTime = DateTime.now().difference(store.lobbyData.startTime);
+      if (_roundDuration - elapsedTime.inSeconds <= 0) {
+        _handleTimeUp();
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _remainingSeconds = _roundDuration - elapsedTime.inSeconds;
+      });
+    });
+  }
+
+  void _updateScore() {
+    final store = context.read<Store>();
+    final lobbyData = store.lobbyData;
+
+    final attemptsUsed =
+        _cursorPosition[0] + 1; // +1 because cursor position is 0-indexed
+
+    // Calculate score based on attempts used
+    // Formula: 100 - ((attemptsUsed - 1) * (100 / (maxAttempts + 1)))
+    // This gives 100 points for 1 attempt, decreasing linearly
+    final int scoreForThisWord =
+        (100 - ((attemptsUsed - 1) * (100 / (lobbyData.maxAttempts + 1))))
+            .round();
+
+    setState(() {
+      // there is a better way to do this, but this is a quick fix
+      // _score is for local calculations and display, lobbyData is for sending over to the other player
+      _score += scoreForThisWord;
+      lobbyData.players[store.user.id]?.score += scoreForThisWord;
+    });
   }
 }
 

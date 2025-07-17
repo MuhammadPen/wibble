@@ -23,41 +23,6 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
   late final FocusNode _focusNode;
 
   @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode();
-    // Request focus when the widget is first created
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is KeyDownEvent) {
-      final keyLabel = event.logicalKey.keyLabel;
-
-      // Handle letters (A-Z)
-      if (keyLabel.length == 1 && RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
-        widget.onKeyTap(keyLabel.toUpperCase());
-      }
-      // Handle Enter key
-      else if (event.logicalKey == LogicalKeyboardKey.enter) {
-        widget.onEnter();
-      }
-      // Handle Backspace key
-      else if (event.logicalKey == LogicalKeyboardKey.backspace) {
-        widget.onDelete();
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return KeyboardListener(
       focusNode: _focusNode,
@@ -100,13 +65,20 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
     );
   }
 
-  Widget _buildKeyboardRow(List<String> letters, BoxConstraints constraints) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: letters
-          .map((letter) => _buildKey(letter, constraints))
-          .toList(),
-    );
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    // Request focus when the widget is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
   }
 
   Widget _buildBottomRow(List<String> letters, BoxConstraints constraints) {
@@ -160,6 +132,15 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
     );
   }
 
+  Widget _buildKeyboardRow(List<String> letters, BoxConstraints constraints) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: letters
+          .map((letter) => _buildKey(letter, constraints))
+          .toList(),
+    );
+  }
+
   Widget _buildSpecialKey(
     String keyType,
     BoxConstraints constraints,
@@ -198,5 +179,24 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
         ),
       ),
     );
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      final keyLabel = event.logicalKey.keyLabel;
+
+      // Handle letters (A-Z)
+      if (keyLabel.length == 1 && RegExp(r'^[A-Za-z]$').hasMatch(keyLabel)) {
+        widget.onKeyTap(keyLabel.toUpperCase());
+      }
+      // Handle Enter key
+      else if (event.logicalKey == LogicalKeyboardKey.enter) {
+        widget.onEnter();
+      }
+      // Handle Backspace key
+      else if (event.logicalKey == LogicalKeyboardKey.backspace) {
+        widget.onDelete();
+      }
+    }
   }
 }
