@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
 class UserFormDialog extends StatefulWidget {
-  final Function(String username) onSubmit;
+  final Function(String username)? onSubmit;
 
-  const UserFormDialog({Key? key, required this.onSubmit}) : super(key: key);
+  const UserFormDialog({Key? key, this.onSubmit}) : super(key: key);
 
   @override
   State<UserFormDialog> createState() => _UserFormDialogState();
 
   // Static method to show the dialog
-  static Future<void> show(
+  static Future<String?> show(
     BuildContext context, {
-    required Function(String username) onSubmit,
+    Function(String username)? onSubmit,
   }) {
-    return showDialog<void>(
+    return showDialog<String>(
       context: context,
       barrierDismissible: false, // Prevents dismissal by tapping outside
       builder: (BuildContext context) {
@@ -101,8 +101,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
   void _handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
       final username = _usernameController.text.trim();
-      Navigator.of(context).pop(); // Only way to dismiss the dialog
-      widget.onSubmit(username);
+      Navigator.of(context).pop(username); // Only way to dismiss the dialog
+      widget.onSubmit?.call(username);
     }
   }
 

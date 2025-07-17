@@ -1,22 +1,21 @@
-// ignore_for_file: depend_on_referenced_packages
+// ignore_for_file: depend_on_referenced_packages, use_build_context_synchronously
 
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:fpjs_pro_plugin/error.dart';
 import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:fpjs_pro_plugin/region.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import 'package:wibble/components/how_to_play.dart';
-import 'package:wibble/components/user_form.dart';
 import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
+import 'package:wibble/styles/button.dart';
 import 'package:wibble/types.dart';
+import 'package:wibble/utils/identity.dart';
 
 class Mainmenu extends StatefulWidget {
   const Mainmenu({super.key});
@@ -48,14 +47,6 @@ class _MainmenuState extends State<Mainmenu> {
       }
     });
 
-    final buttonStyle = ElevatedButton.styleFrom(
-      backgroundColor: Colors.blue,
-      foregroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-      textStyle: TextStyle(fontSize: 16),
-      elevation: 0,
-    );
-
     return Scaffold(
       appBar: null,
       body: Center(
@@ -68,11 +59,11 @@ class _MainmenuState extends State<Mainmenu> {
                   Text('Finding opponents...', style: TextStyle(fontSize: 18)),
                   SizedBox(height: 10),
                   ElevatedButton.icon(
-                    icon: Icon(Icons.person),
+                    icon: Icon(Icons.cancel),
                     label: Text("cancel"),
                     onPressed: () async {
+                      // NOTE on all buttons: loading - disabled when loading
                       try {
-                        print('Cancelling matchmaking...');
                         await leaveLobby(
                           lobbyId: store.lobbyData.id,
                           playerId: store.user.id,
@@ -195,78 +186,26 @@ class _MainmenuState extends State<Mainmenu> {
     super.dispose();
   }
 
-  // Identify visitor
-  void identifyUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    var cachedUser = prefs.getString(UserCacheKeys.user.name);
-
-    if (cachedUser != null) {
-      try {
-        setState(() {
-          identifiedUser = User.fromJson(jsonDecode(cachedUser));
-        });
-      } catch (e) {
-        print("🐾 error: $e");
-      }
-      return;
-    }
-
-    try {
-      var visitorId = await FpjsProPlugin.getVisitorId();
-
-      var user = await getUser(userId: visitorId ?? Uuid().v4());
-
-      if (user != null) {
-        setState(() {
-          identifiedUser = user;
-        });
-        //cache user
-        await prefs.setString(
-          UserCacheKeys.user.name,
-          jsonEncode(user.toJson()),
-        );
-      } else {
-        UserFormDialog.show(
-          context,
-          onSubmit: (username) async {
-            final user = User(
-              id: visitorId ?? Uuid().v4(),
-              username: username,
-              rank: Rank.bronze,
-              createdAt: DateTime.now(),
-            );
-            await createUser(user: user);
-
-            //cache user
-            await prefs.setString(
-              UserCacheKeys.user.name,
-              jsonEncode(user.toJson()),
-            );
-
-            setState(() {
-              identifiedUser = user;
-            });
-          },
-        );
-      }
-    } on FingerprintProError catch (e) {
-      // Process the error
-      print('Error identifying visitor: $e');
-    }
-  }
-
   void initFingerprint() async {
     await FpjsProPlugin.initFpjs(
       Env.FINGERPRINT_API_KEY, // insert your API key here
       region: Region.us, // Insert the data region of your Fingerprint workspace
     );
-    identifyUser();
+    final user = await identifyUser(context: context);
+    if (user != null) {
+      setState(() {
+        identifiedUser = user;
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    initFingerprint();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initFingerprint();
+    });
 
     // Listen to store changes
     final store = context.read<Store>();
@@ -277,6 +216,8 @@ class _MainmenuState extends State<Mainmenu> {
     final prefs = await SharedPreferences.getInstance();
     final cachedUser = prefs.getString(UserCacheKeys.user.name);
     final store = context.read<Store>();
+
+    // if lobby is full, navigate to gameplay
     final isLobbyFull =
         store.lobbyData.playerCount >= store.lobbyData.maxPlayers;
     if (isLobbyFull && !_hasNavigated) {
@@ -285,6 +226,8 @@ class _MainmenuState extends State<Mainmenu> {
       Navigator.pushNamed(context, "/${Routes.gameplay.name}");
       return;
     }
+
+    // if user is in lobby and is not on the gameplay screen, set matchmaking to true
     if (cachedUser != null) {
       final isPlayerInLobby = store.lobbyData.players.containsKey(
         User.fromJson(jsonDecode(cachedUser)).id,
