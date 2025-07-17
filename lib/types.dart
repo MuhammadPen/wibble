@@ -6,9 +6,13 @@ part 'types.g.dart';
 
 enum FirestoreCollections { users, multiplayer }
 
+enum UserCacheKeys { user }
+
 enum Rank { bronze, silver, gold, platinum, diamond, master, grandmaster }
 
-enum Routes { mainmenu, gameplay }
+enum LobbyType { oneVOne, custom }
+
+enum Routes { mainmenu, gameplay, privateLobby }
 
 enum DialogKeys { gameWon, gameLost, gameTied, howToPlay }
 
@@ -58,16 +62,20 @@ class Lobby {
   final int wordLength;
   final int maxAttempts;
   final int playerCount;
+  final int maxPlayers;
+  final LobbyType type;
   DateTime startTime;
   final Map<String, LobbyPlayerInfo> players;
   Lobby({
     required this.id,
-    required this.rounds,
-    required this.wordLength,
     required this.maxAttempts,
+    required this.maxPlayers,
     required this.playerCount,
     required this.players,
+    required this.rounds,
     required this.startTime,
+    required this.type,
+    required this.wordLength,
   });
 
   // Generated methods:

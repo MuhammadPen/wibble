@@ -102,6 +102,7 @@ class _GameplayState extends State<Gameplay> {
   // Game state variables
   List<List<String>> _guessGrid = [];
   final List<int> _cursorPosition = [0, 0]; // [row, column]
+  bool _startGamePressed = false;
   int _currentRound = 0;
   String _currentWord = "";
   int _score = 0;
@@ -202,13 +203,15 @@ class _GameplayState extends State<Gameplay> {
     await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
     //clear lobby in store
     store.lobbyData = Lobby(
-      id: '1234567890',
+      id: '',
       rounds: 3,
       wordLength: 5,
       maxAttempts: 6,
       playerCount: 1,
       players: {},
       startTime: DateTime.now(),
+      maxPlayers: 2,
+      type: LobbyType.oneVOne,
     );
 
     if (myScore > opponentScore) {
@@ -462,12 +465,13 @@ class _GameplayState extends State<Gameplay> {
                     opponent: opponent,
                   ),
                   SizedBox(height: 20),
-                  CountdownWidget(
-                    durationInSeconds: 3,
-                    onCountdownComplete: () {
-                      _startGameTimer();
-                    },
-                  ),
+                  if (_startGamePressed)
+                    CountdownWidget(
+                      durationInSeconds: 3,
+                      onCountdownComplete: () {
+                        _startGameTimer();
+                      },
+                    ),
                   if (_showCurrentWord)
                     Text(
                       'Word was: $_currentWord',

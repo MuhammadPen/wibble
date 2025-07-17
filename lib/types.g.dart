@@ -48,14 +48,16 @@ Map<String, dynamic> _$LobbyPlayerInfoToJson(LobbyPlayerInfo instance) =>
 
 Lobby _$LobbyFromJson(Map<String, dynamic> json) => Lobby(
   id: json['id'] as String,
-  rounds: (json['rounds'] as num).toInt(),
-  wordLength: (json['wordLength'] as num).toInt(),
   maxAttempts: (json['maxAttempts'] as num).toInt(),
+  maxPlayers: (json['maxPlayers'] as num).toInt(),
   playerCount: (json['playerCount'] as num).toInt(),
   players: (json['players'] as Map<String, dynamic>).map(
     (k, e) => MapEntry(k, LobbyPlayerInfo.fromJson(e as Map<String, dynamic>)),
   ),
+  rounds: (json['rounds'] as num).toInt(),
   startTime: DateTime.parse(json['startTime'] as String),
+  type: $enumDecode(_$LobbyTypeEnumMap, json['type']),
+  wordLength: (json['wordLength'] as num).toInt(),
 );
 
 Map<String, dynamic> _$LobbyToJson(Lobby instance) => <String, dynamic>{
@@ -64,6 +66,13 @@ Map<String, dynamic> _$LobbyToJson(Lobby instance) => <String, dynamic>{
   'wordLength': instance.wordLength,
   'maxAttempts': instance.maxAttempts,
   'playerCount': instance.playerCount,
+  'maxPlayers': instance.maxPlayers,
+  'type': _$LobbyTypeEnumMap[instance.type]!,
   'startTime': instance.startTime.toIso8601String(),
   'players': instance.players.map((k, e) => MapEntry(k, e.toJson())),
+};
+
+const _$LobbyTypeEnumMap = {
+  LobbyType.oneVOne: 'oneVOne',
+  LobbyType.custom: 'custom',
 };

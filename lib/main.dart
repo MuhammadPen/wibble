@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/pages/gameplay.dart';
 import 'package:wibble/pages/mainmenu.dart';
+import 'package:wibble/pages/privateLobby.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/mainmenu': (context) => Mainmenu(),
           '/gameplay': (context) => Gameplay(),
+          '/privateLobby': (context) => PrivateLobby(),
         },
       ),
     );
@@ -38,13 +40,15 @@ class MyApp extends StatelessWidget {
 
 class Store extends ChangeNotifier {
   var lobbyData = Lobby(
-    id: '1234567890',
+    id: '',
     rounds: 3,
     wordLength: 5,
     maxAttempts: 6,
     playerCount: 1,
     players: {},
     startTime: DateTime.now(),
+    maxPlayers: 2,
+    type: LobbyType.oneVOne,
   );
   var user = User(
     id: '',
@@ -64,13 +68,19 @@ class Store extends ChangeNotifier {
   }
 
   // Start matchmaking and manage subscription
-  Future<void> startMatchmaking() async {
+  Future<void> searchForGame({required LobbyType type}) async {
     _isMatchmaking = true;
     notifyListeners();
 
     try {
-      final lobbyStream = await start1v1Matchmaking(
-        LobbyPlayerInfo(user: user, score: 0, round: 0, attempts: 0),
+      final lobbyStream = await startMatchmaking(
+        type: type,
+        playerInfo: LobbyPlayerInfo(
+          user: user,
+          score: 0,
+          round: 0,
+          attempts: 0,
+        ),
       );
 
       lobbySubscription = lobbyStream.listen((event) {

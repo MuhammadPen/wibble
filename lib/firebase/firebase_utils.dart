@@ -34,15 +34,20 @@ Future<String> createLobby({required Lobby lobby}) async {
 }
 
 Future<void> joinLobby({
-  required String lobbyId,
+  required Lobby lobby,
   required LobbyPlayerInfo playerInfo,
 }) async {
+  //remove player from lobby if they are already in it
+  if (lobby.players.containsKey(playerInfo.user.id)) {
+    lobby.players.remove(playerInfo.user.id);
+  }
+
   await Firestore().updateDocument(
     collectionId: FirestoreCollections.multiplayer.name,
-    documentId: lobbyId,
+    documentId: lobby.id,
     data: {
       'players.${playerInfo.user.id}': playerInfo.toJson(),
-      'playerCount': FieldValue.increment(1),
+      'playerCount': lobby.players.length + 1,
     },
   );
 }
@@ -61,11 +66,19 @@ Future<void> leaveLobby({
   );
 }
 
-Future<QuerySnapshot<Map<String, dynamic>>> getOpen1v1Lobbies() async {
+Future<QuerySnapshot<Map<String, dynamic>>?> getOpenLobbies({
+  required LobbyType type,
+}) async {
   final lobbies = await Firestore.instance
       .collection(FirestoreCollections.multiplayer.name)
-      .where('playerCount', isEqualTo: 1)
+      .where('type', isEqualTo: type.name)
+      .where('playerCount', isLessThan: type == LobbyType.oneVOne ? 2 : 5)
+      .orderBy('startTime', descending: false)
       .get();
+
+  if (lobbies.docs.isEmpty) {
+    return null;
+  }
 
   return lobbies;
 }
@@ -99,40 +112,55 @@ Future<void> updatePlayerProgressInLobby({
   );
 }
 
-Future<Stream<DocumentSnapshot>> start1v1Matchmaking(
-  LobbyPlayerInfo playerInfo,
-) async {
-  final lobbies = await getOpen1v1Lobbies();
+//update to be generic for both 1v1 and custom lobbies. take type as argument
+Future<Stream<DocumentSnapshot>> startMatchmaking({
+  required LobbyType type,
+  required LobbyPlayerInfo playerInfo,
+}) async {
+  final lobbies = await getOpenLobbies(type: type);
+
   String? compatibleLobbyId;
 
-  for (var lobby in lobbies.docs) {
-    final players = lobby.data()['players'];
-    for (var opponent in players.entries) {
-      opponent = LobbyPlayerInfo.fromJson(opponent.value);
-      if (opponent.user.id != playerInfo.user.id &&
-          opponent.user.rank == playerInfo.user.rank) {
-        compatibleLobbyId = lobby.id;
-        await joinLobby(lobbyId: compatibleLobbyId, playerInfo: playerInfo);
-        break;
-      }
-    }
-    if (compatibleLobbyId != null) {
-      break;
-    }
+  if (lobbies != null) {
+    compatibleLobbyId = lobbies.docs.first.id;
+    // join the oldest lobby
+    await joinLobby(
+      lobby: Lobby.fromJson(lobbies.docs.first.data()),
+      playerInfo: playerInfo,
+    );
+  } else {
+    // If compatible lobby is not found, create a new one
+    compatibleLobbyId ??= await createLobby(
+      lobby: Lobby(
+        id: Uuid().v4(),
+        rounds: 3,
+        wordLength: 5,
+        maxAttempts: 6,
+        playerCount: 1,
+        maxPlayers: type == LobbyType.oneVOne ? 2 : 5,
+        type: type,
+        players: {playerInfo.user.id: playerInfo},
+        startTime: DateTime.now(),
+      ),
+    );
   }
 
-  // If compatible lobby is not found, create a new one
-  compatibleLobbyId ??= await createLobby(
-    lobby: Lobby(
-      id: Uuid().v4(),
-      rounds: 3,
-      wordLength: 5,
-      maxAttempts: 6,
-      playerCount: 1,
-      players: {playerInfo.user.id: playerInfo},
-      startTime: DateTime.now(),
-    ),
-  );
+  // ranked matchmaking logic goes here
+  // for (var lobby in lobbies.docs) {
+  //   final players = lobby.data()['players'];
+  //   for (var opponent in players.entries) {
+  //     opponent = LobbyPlayerInfo.fromJson(opponent.value);
+  //     if (opponent.user.id != playerInfo.user.id &&
+  //         opponent.user.rank == playerInfo.user.rank) {
+  //       compatibleLobbyId = lobby.id;
+  //       await joinLobby(lobbyId: compatibleLobbyId, playerInfo: playerInfo);
+  //       break;
+  //     }
+  //   }
+  //   if (compatibleLobbyId != null) {
+  //     break;
+  //   }
+  // }
 
   // Subscribe to the lobby
   final subscription = await Firestore().subscribeToDocument(

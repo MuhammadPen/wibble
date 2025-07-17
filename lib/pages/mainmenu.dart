@@ -1,5 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:fpjs_pro_plugin/error.dart';
 import 'package:fpjs_pro_plugin/region.dart';
 import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wibble/components/how_to_play.dart';
 import 'package:wibble/components/user_form.dart';
@@ -39,12 +41,26 @@ class _MainmenuState extends State<Mainmenu> {
     store.addListener(_onStoreChanged);
   }
 
-  void _onStoreChanged() {
+  void _onStoreChanged() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedUser = prefs.getString(UserCacheKeys.user.name);
     final store = context.read<Store>();
-    if (store.lobbyData.playerCount > 1 && !_hasNavigated) {
+    final isLobbyFull =
+        store.lobbyData.playerCount >= store.lobbyData.maxPlayers;
+    if (isLobbyFull && !_hasNavigated) {
       _hasNavigated = true;
       store.isMatchmaking = false;
       Navigator.pushNamed(context, "/${Routes.gameplay.name}");
+      return;
+    }
+    if (cachedUser != null) {
+      final isPlayerInLobby = store.lobbyData.players.containsKey(
+        User.fromJson(jsonDecode(cachedUser)).id,
+      );
+      if (isPlayerInLobby && !_hasNavigated) {
+        _hasNavigated = true;
+        store.isMatchmaking = true;
+      }
     }
   }
 
@@ -65,17 +81,34 @@ class _MainmenuState extends State<Mainmenu> {
 
   // Identify visitor
   void identifyUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    var cachedUser = prefs.getString(UserCacheKeys.user.name);
+
+    if (cachedUser != null) {
+      try {
+        setState(() {
+          identifiedUser = User.fromJson(jsonDecode(cachedUser));
+        });
+      } catch (e) {
+        print("🐾 error: $e");
+      }
+      return;
+    }
+
     try {
       var visitorId = await FpjsProPlugin.getVisitorId();
 
       var user = await getUser(userId: visitorId ?? Uuid().v4());
 
-      print("🐾 user via fingerprint: ${user?.username}");
-
       if (user != null) {
         setState(() {
           identifiedUser = user;
         });
+        //cache user
+        await prefs.setString(
+          UserCacheKeys.user.name,
+          jsonEncode(user.toJson()),
+        );
       } else {
         UserFormDialog.show(
           context,
@@ -87,6 +120,12 @@ class _MainmenuState extends State<Mainmenu> {
               createdAt: DateTime.now(),
             );
             await createUser(user: user);
+
+            //cache user
+            await prefs.setString(
+              UserCacheKeys.user.name,
+              jsonEncode(user.toJson()),
+            );
 
             setState(() {
               identifiedUser = user;
@@ -105,7 +144,6 @@ class _MainmenuState extends State<Mainmenu> {
     final store = Provider.of<Store>(context);
     final isMatchmaking = store.isMatchmaking;
 
-    print("🆙 updated USER FROM STATE: ${identifiedUser?.username}");
     if (identifiedUser != null) {
       store.user = identifiedUser!;
     }
@@ -136,7 +174,37 @@ class _MainmenuState extends State<Mainmenu> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 20),
-                  Text('Finding opponent...', style: TextStyle(fontSize: 18)),
+                  Text('Finding opponents...', style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.person),
+                    label: Text("cancel"),
+                    onPressed: () async {
+                      try {
+                        print('Cancelling matchmaking...');
+                        await leaveLobby(
+                          lobbyId: store.lobbyData.id,
+                          playerId: store.user.id,
+                        );
+                        store.isMatchmaking = false;
+                        store.lobbyData = Lobby(
+                          id: '',
+                          rounds: 3,
+                          wordLength: 5,
+                          maxAttempts: 6,
+                          playerCount: 0,
+                          maxPlayers: 2,
+                          type: LobbyType.oneVOne,
+                          players: {},
+                          startTime: DateTime.now(),
+                        );
+                      } catch (e, stackTrace) {
+                        print('Error in matchmaking: $e');
+                        print('Stack trace: $stackTrace');
+                      }
+                    },
+                    style: buttonStyle,
+                  ),
                 ],
               )
             : Column(
@@ -165,7 +233,26 @@ class _MainmenuState extends State<Mainmenu> {
                         : () async {
                             try {
                               print('Starting 1v1 matchmaking...');
-                              await store.startMatchmaking();
+                              await store.searchForGame(
+                                type: LobbyType.oneVOne,
+                              );
+                            } catch (e, stackTrace) {
+                              print('Error in matchmaking: $e');
+                              print('Stack trace: $stackTrace');
+                            }
+                          },
+                    style: buttonStyle,
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.person),
+                    label: Text("5v5"),
+                    onPressed: store.user.id.isEmpty
+                        ? null
+                        : () async {
+                            try {
+                              print('Starting 5v5 matchmaking...');
+                              await store.searchForGame(type: LobbyType.custom);
                             } catch (e, stackTrace) {
                               print('Error in matchmaking: $e');
                               print('Stack trace: $stackTrace');
@@ -177,7 +264,12 @@ class _MainmenuState extends State<Mainmenu> {
                   ElevatedButton.icon(
                     icon: Icon(Icons.person),
                     label: Text("Private lobby"),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        "/${Routes.privateLobby.name}",
+                      );
+                    },
                     style: buttonStyle,
                   ),
                   SizedBox(height: 10),
