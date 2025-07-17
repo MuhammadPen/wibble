@@ -93,6 +93,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
   Widget _buildUsernameField() {
     return TextFormField(
       controller: _usernameController,
+      autofocus: true,
       decoration: const InputDecoration(
         labelText: 'Username',
         hintText: 'Enter your username',

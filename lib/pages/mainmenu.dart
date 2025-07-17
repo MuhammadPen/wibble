@@ -9,6 +9,7 @@ import 'package:fpjs_pro_plugin/error.dart';
 import 'package:fpjs_pro_plugin/region.dart';
 import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wibble/components/how_to_play.dart';
 import 'package:wibble/components/user_form.dart';
 import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
@@ -25,29 +26,33 @@ class Mainmenu extends StatefulWidget {
 
 class _MainmenuState extends State<Mainmenu> {
   bool _hasNavigated = false; // Add flag to prevent multiple navigations
-  var identifiedUser;
+  User? identifiedUser;
+  bool _hasCheckedResumeMatch = false;
 
   @override
   void initState() {
     super.initState();
     initFingerprint();
+
+    // Listen to store changes
+    final store = context.read<Store>();
+    store.addListener(_onStoreChanged);
+  }
+
+  void _onStoreChanged() {
+    final store = context.read<Store>();
+    if (store.lobbyData.playerCount > 1 && !_hasNavigated) {
+      _hasNavigated = true;
+      store.isMatchmaking = false;
+      Navigator.pushNamed(context, "/${Routes.gameplay.name}");
+    }
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    final store = Provider.of<Store>(context);
-    final lobbyData = store.lobbyData;
-
-    if (lobbyData.playerCount > 1 && !_hasNavigated) {
-      _hasNavigated = true; // Set flag to prevent future navigations
-      // Defer state changes until after the current build is complete
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        store.isMatchmaking = false;
-        Navigator.pushNamed(context, "/${Routes.gameplay.name}");
-      });
-    }
+  void dispose() {
+    final store = context.read<Store>();
+    store.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
   void initFingerprint() async {
@@ -62,14 +67,15 @@ class _MainmenuState extends State<Mainmenu> {
   void identifyUser() async {
     try {
       var visitorId = await FpjsProPlugin.getVisitorId();
-      var visitorData = await FpjsProPlugin.getVisitorData();
 
       var user = await getUser(userId: visitorId ?? Uuid().v4());
 
-      print(user);
+      print("🐾 user via fingerprint: ${user?.username}");
 
       if (user != null) {
-        identifiedUser = user;
+        setState(() {
+          identifiedUser = user;
+        });
       } else {
         UserFormDialog.show(
           context,
@@ -82,7 +88,9 @@ class _MainmenuState extends State<Mainmenu> {
             );
             await createUser(user: user);
 
-            identifiedUser = user;
+            setState(() {
+              identifiedUser = user;
+            });
           },
         );
       }
@@ -97,12 +105,18 @@ class _MainmenuState extends State<Mainmenu> {
     final store = Provider.of<Store>(context);
     final isMatchmaking = store.isMatchmaking;
 
+    print("🆙 updated USER FROM STATE: ${identifiedUser?.username}");
     if (identifiedUser != null) {
-      store.user = identifiedUser;
+      store.user = identifiedUser!;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      store.resumeMatch();
+      if (!_hasCheckedResumeMatch) {
+        setState(() {
+          _hasCheckedResumeMatch = true;
+        });
+        store.resumeMatch();
+      }
     });
 
     final buttonStyle = ElevatedButton.styleFrom(
@@ -146,9 +160,17 @@ class _MainmenuState extends State<Mainmenu> {
                   ElevatedButton.icon(
                     icon: Icon(Icons.person),
                     label: Text("1v1"),
-                    onPressed: () async {
-                      await store.startMatchmaking();
-                    },
+                    onPressed: store.user.id.isEmpty
+                        ? null
+                        : () async {
+                            try {
+                              print('Starting 1v1 matchmaking...');
+                              await store.startMatchmaking();
+                            } catch (e, stackTrace) {
+                              print('Error in matchmaking: $e');
+                              print('Stack trace: $stackTrace');
+                            }
+                          },
                     style: buttonStyle,
                   ),
                   SizedBox(height: 10),
@@ -162,7 +184,9 @@ class _MainmenuState extends State<Mainmenu> {
                   ElevatedButton.icon(
                     icon: Icon(Icons.help),
                     label: Text("How to play"),
-                    onPressed: () {},
+                    onPressed: () {
+                      HowToPlayDialog.show(context);
+                    },
                     style: buttonStyle,
                   ),
                   SizedBox(height: 10),

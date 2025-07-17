@@ -10,7 +10,7 @@ enum Rank { bronze, silver, gold, platinum, diamond, master, grandmaster }
 
 enum Routes { mainmenu, gameplay }
 
-enum DialogKeys { gameWon, gameLost, gameTied }
+enum DialogKeys { gameWon, gameLost, gameTied, howToPlay }
 
 @JsonSerializable(explicitToJson: true)
 class User {
@@ -34,11 +34,11 @@ class User {
 @JsonSerializable(explicitToJson: true)
 class LobbyPlayerInfo {
   final User user;
-  final int score;
-  final int round;
-  final int attempts;
+  int score;
+  int round;
+  int attempts;
 
-  const LobbyPlayerInfo({
+  LobbyPlayerInfo({
     required this.user,
     required this.score,
     required this.round,

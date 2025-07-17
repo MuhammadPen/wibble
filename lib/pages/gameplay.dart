@@ -12,11 +12,13 @@ import 'dart:async';
 class GameStatus extends StatelessWidget {
   final int remainingSeconds;
   final User user;
+  final int playerScore;
   final LobbyPlayerInfo? opponent;
   const GameStatus({
     super.key,
     required this.remainingSeconds,
     required this.user,
+    required this.playerScore,
     required this.opponent,
   });
 
@@ -50,17 +52,12 @@ class GameStatus extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Consumer<Store>(
-                      builder: (context, store, child) {
-                        final currentPlayer = store.lobbyData.players[user.id];
-                        return Text(
-                          '${currentPlayer?.score ?? 0}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        );
-                      },
+                    Text(
+                      '${playerScore}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -105,15 +102,16 @@ class _GameplayState extends State<Gameplay> {
   List<List<String>> _guessGrid = [];
   final List<int> _cursorPosition = [0, 0]; // [row, column]
   int _currentRound = 0;
-  int _score = 0;
   String _currentWord = "";
-  bool _isCurrentWordComplete = false;
+  int _score = 0;
+  bool _isCurrentRowFilled = false;
   bool _areAttemptsOver = false;
+  bool _showCurrentWord = false;
   late FocusNode _focusNode;
 
   // Timer variables
   Timer? _gameTimer;
-  int _remainingSeconds = 3; // 3 minutes = 180 seconds
+  int _remainingSeconds = 180; // 3 minutes = 180 seconds
   bool _isTimeUp = false;
 
   @override
@@ -130,6 +128,34 @@ class _GameplayState extends State<Gameplay> {
     _focusNode.dispose();
     _gameTimer?.cancel();
     super.dispose();
+  }
+
+  int _getPlayerScore() {
+    final store = context.read<Store>();
+    final lobbyData = context.read<Store>().lobbyData;
+
+    final LobbyPlayerInfo? myPlayer = lobbyData.players[store.user.id];
+
+    final int myScore = myPlayer?.score ?? _score;
+
+    return myScore;
+  }
+
+  int _getOpponentScore() {
+    final store = context.read<Store>();
+    final lobbyData = context.read<Store>().lobbyData;
+
+    LobbyPlayerInfo? opponent;
+    try {
+      opponent = lobbyData.players.values.firstWhere(
+        (e) => e.user.id != store.user.id,
+      );
+    } catch (e) {
+      print('No opponent found');
+    }
+    final int opponentScore = opponent?.score ?? 0;
+
+    return opponentScore;
   }
 
   void _startGameTimer() {
@@ -152,24 +178,10 @@ class _GameplayState extends State<Gameplay> {
     });
 
     final store = context.read<Store>();
+    final lobbyData = store.lobbyData;
 
-    // compare score with opponent
-    // Compare the player's score with the opponent's score.
-    // This assumes you have access to the opponent's score via your lobby/store.
-    final lobbyData = context.read<Store>().lobbyData;
-
-    final LobbyPlayerInfo? myPlayer = lobbyData.players[store.user.id];
-    LobbyPlayerInfo? opponent;
-    try {
-      opponent = lobbyData.players.values.firstWhere(
-        (e) => e.user.id != store.user.id,
-      );
-    } catch (e) {
-      print('No opponent found');
-    }
-
-    final int myScore = myPlayer?.score ?? _score;
-    final int opponentScore = opponent?.score ?? 0;
+    final int myScore = _getPlayerScore();
+    final int opponentScore = _getOpponentScore();
 
     //leave lobby
     await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
@@ -230,19 +242,24 @@ class _GameplayState extends State<Gameplay> {
   }
 
   void _updateScore() {
-    final maxAttempts = context.read<Store>().lobbyData.maxAttempts;
+    final store = context.read<Store>();
+    final lobbyData = store.lobbyData;
+
     final attemptsUsed =
         _cursorPosition[0] + 1; // +1 because cursor position is 0-indexed
 
     // Calculate score based on attempts used
-    // More attempts = lower score, fewer attempts = higher score
-    // Formula: 100 - ((attemptsUsed - 1) * (100 / maxAttempts))
-    // This gives 100 points for 1 attempt, decreasing linearly to 0 for maxAttempts
+    // Formula: 100 - ((attemptsUsed - 1) * (100 / (maxAttempts + 1)))
+    // This gives 100 points for 1 attempt, decreasing linearly
     final int scoreForThisWord =
-        (100 - ((attemptsUsed - 1) * (100 / maxAttempts))).round();
+        (100 - ((attemptsUsed - 1) * (100 / (lobbyData.maxAttempts + 1))))
+            .round();
 
     setState(() {
+      // there is a better way to do this, but this is a quick fix
+      // _score is for local calculations and display, lobbyData is for sending over to the other player
       _score += scoreForThisWord;
+      lobbyData.players[store.user.id]?.score += scoreForThisWord;
     });
   }
 
@@ -260,7 +277,7 @@ class _GameplayState extends State<Gameplay> {
 
   /// Handle key press from the keyboard
   void _handleKeyTap(String key) {
-    if (_isCurrentWordComplete || _areAttemptsOver || _isTimeUp) return;
+    if (_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
 
     setState(() {
       final wordLength = _guessGrid[0].length;
@@ -272,7 +289,7 @@ class _GameplayState extends State<Gameplay> {
 
         // Check if word is now complete
         if (_cursorPosition[1] == wordLength) {
-          _isCurrentWordComplete = true;
+          _isCurrentRowFilled = true;
         }
       }
     });
@@ -301,7 +318,7 @@ class _GameplayState extends State<Gameplay> {
 
         // If we were at the end of a complete word, mark it as incomplete
         if (isAtEndOfWord) {
-          _isCurrentWordComplete = false;
+          _isCurrentRowFilled = false;
         }
       }
     });
@@ -309,7 +326,7 @@ class _GameplayState extends State<Gameplay> {
 
   /// Handle enter key press to submit the current word
   void _handleEnter() {
-    if (!_isCurrentWordComplete || _areAttemptsOver || _isTimeUp) return;
+    if (!_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
 
     // Add word validation
     var currentAttemptArray = _guessGrid[_cursorPosition[0]];
@@ -325,33 +342,42 @@ class _GameplayState extends State<Gameplay> {
         _currentRound++;
         _cursorPosition[0] = 0;
         _cursorPosition[1] = 0;
-        _isCurrentWordComplete = false;
+        _isCurrentRowFilled = false;
         _areAttemptsOver = false;
       });
       _initializeGameGrid();
       // select new word
       _selectWord();
-      return;
+    } else {
+      setState(() async {
+        // Move to the next row
+        _cursorPosition[0]++;
+        _cursorPosition[1] = 0;
+        _isCurrentRowFilled = false;
+
+        // Check if we've reached the maximum number of attempts
+        if (_cursorPosition[0] >= _guessGrid.length) {
+          _showCurrentWord = true;
+          // wait for 3 seconds
+          await Future.delayed(const Duration(seconds: 3), () {
+            _showCurrentWord = false;
+          });
+          _cursorPosition[0] = 0;
+          _cursorPosition[1] = 0;
+          _selectWord();
+          _initializeGameGrid();
+
+          // _areAttemptsOver = true;
+        }
+      });
     }
-
-    setState(() {
-      // Move to the next row
-      _cursorPosition[0]++;
-      _cursorPosition[1] = 0;
-      _isCurrentWordComplete = false;
-
-      // Check if we've reached the maximum number of attempts
-      if (_cursorPosition[0] >= _guessGrid.length) {
-        _areAttemptsOver = true;
-      }
-    });
 
     // update player progress in lobby
     // if the lobby doesnt exist this will just error out. can ignore that
     updatePlayerProgressInLobby(
       lobbyId: context.read<Store>().lobbyData.id,
       playerId: context.read<Store>().user.id,
-      score: _score,
+      score: _getPlayerScore(),
       round: _currentRound,
       attempts: _cursorPosition[0] + 1,
     ).catchError((error) {
@@ -361,12 +387,12 @@ class _GameplayState extends State<Gameplay> {
 
   @override
   Widget build(BuildContext context) {
-    // lobbyData
-    final lobbyData = context.read<Store>().lobbyData;
+    final store = context.read<Store>();
+    final lobbyData = store.lobbyData;
     LobbyPlayerInfo? opponent;
     try {
       opponent = lobbyData.players.values.firstWhere(
-        (e) => e.user.id != context.read<Store>().user.id,
+        (e) => e.user.id != store.user.id,
       );
     } catch (e) {
       print('No opponent found');
@@ -413,14 +439,24 @@ class _GameplayState extends State<Gameplay> {
                 children: [
                   GameStatus(
                     remainingSeconds: _remainingSeconds,
-                    user: context.read<Store>().user,
+                    user: store.user,
+                    playerScore: _score,
                     opponent: opponent,
                   ),
+                  SizedBox(height: 20),
+                  if (_showCurrentWord)
+                    Text(
+                      'Word was: $_currentWord',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   // Word grid display
                   WordGrid(
                     guessGrid: _guessGrid,
                     cursorPosition: _cursorPosition,
-                    isWordComplete: _isCurrentWordComplete,
+                    isWordComplete: _isCurrentRowFilled,
                     targetWord: _currentWord,
                   ),
                   // Keyboard
@@ -431,7 +467,7 @@ class _GameplayState extends State<Gameplay> {
                       onKeyTap: _handleKeyTap,
                       onDelete: _handleDelete,
                       onEnter: _handleEnter,
-                      isCurrentWordComplete: _isCurrentWordComplete,
+                      isCurrentWordComplete: _isCurrentRowFilled,
                     ),
                   ),
                 ],
