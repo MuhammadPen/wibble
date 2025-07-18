@@ -73,6 +73,7 @@ class CustomDialog extends StatelessWidget {
     required String message,
     VoidCallback? onClose,
     String buttonText = 'Close',
+    bool barrierDismissible = true,
   }) {
     // If dialog with this key already exists, don't create another
     if (_openDialogs.containsKey(dialogKey)) {
@@ -81,16 +82,17 @@ class CustomDialog extends StatelessWidget {
 
     return showDialog<void>(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: barrierDismissible,
       builder: (BuildContext dialogContext) {
         // Store the dialog context with its key
         _openDialogs[dialogKey] = dialogContext;
 
-        return WillPopScope(
-          onWillPop: () async {
-            // Remove from tracking when dialog is dismissed
-            _openDialogs.remove(dialogKey);
-            return true;
+        return PopScope(
+          onPopInvokedWithResult: (didPop, result) async {
+            if (didPop) {
+              // Remove from tracking when dialog is dismissed
+              _openDialogs.remove(dialogKey);
+            }
           },
           child: CustomDialog(
             message: message,

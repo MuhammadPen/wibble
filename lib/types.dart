@@ -1,18 +1,63 @@
 // NOTE - Run `dart run build_runner build` after creating a `@JsonSerializable()` class to generate json methods
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'types.g.dart';
 
-enum DialogKeys { gameWon, gameLost, gameTied, howToPlay }
+// Custom converter to handle both Firestore Timestamp and String for DateTime
+class TimestampConverter implements JsonConverter<DateTime?, dynamic> {
+  const TimestampConverter();
 
-enum FirestoreCollections { users, multiplayer }
+  @override
+  DateTime? fromJson(dynamic json) {
+    if (json == null) return null;
+    if (json is Timestamp) {
+      return json.toDate();
+    }
+    if (json is String) {
+      return DateTime.parse(json);
+    }
+    throw ArgumentError(
+      'Invalid type for DateTime conversion: ${json.runtimeType}',
+    );
+  }
+
+  @override
+  dynamic toJson(DateTime? dateTime) {
+    return dateTime?.toIso8601String();
+  }
+}
+
+enum DialogKeys { gameWon, gameLost, gameTied, howToPlay, startGame }
+
+enum FirestoreCollections { users, multiplayer, invites }
 
 enum LobbyType { oneVOne, custom }
 
 enum Rank { bronze, silver, gold, platinum, diamond, master, grandmaster }
 
 enum Routes { mainmenu, gameplay, privateLobby }
+
+@JsonSerializable(explicitToJson: true)
+class Invite {
+  final String id;
+  final String lobbyId;
+  final String senderId;
+  final String receiverId;
+  final DateTime createdAt;
+
+  Invite({
+    required this.id,
+    required this.lobbyId,
+    required this.senderId,
+    required this.receiverId,
+    required this.createdAt,
+  });
+
+  factory Invite.fromJson(Map<String, dynamic> json) => _$InviteFromJson(json);
+  Map<String, dynamic> toJson() => _$InviteToJson(this);
+}
 
 @JsonSerializable(explicitToJson: true)
 class Lobby {
@@ -23,7 +68,8 @@ class Lobby {
   final int playerCount;
   final int maxPlayers;
   final LobbyType type;
-  DateTime startTime;
+  @TimestampConverter()
+  DateTime? startTime;
   final Map<String, LobbyPlayerInfo> players;
   Lobby({
     required this.id,
@@ -32,7 +78,7 @@ class Lobby {
     required this.playerCount,
     required this.players,
     required this.rounds,
-    required this.startTime,
+    this.startTime,
     required this.type,
     required this.wordLength,
   });

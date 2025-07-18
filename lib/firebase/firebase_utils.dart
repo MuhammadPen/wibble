@@ -161,7 +161,7 @@ Future<Stream<DocumentSnapshot>> startMatchmaking({
         maxPlayers: type == LobbyType.oneVOne ? 2 : 5,
         type: type,
         players: {playerInfo.user.id: playerInfo},
-        startTime: DateTime.now(),
+        startTime: null,
       ),
     );
   }
@@ -208,4 +208,47 @@ Future<void> updatePlayerProgressInLobby({
       'players.$playerId.attempts': attempts,
     },
   );
+}
+
+Future<void> invitePlayer({required Invite invite}) async {
+  await Firestore().addDocument(
+    collectionId: FirestoreCollections.invites.name,
+    documentId: invite.id,
+    data: invite.toJson(),
+  );
+}
+
+Future<void> acceptInvite({
+  required Invite invite,
+  required Lobby lobby,
+  required LobbyPlayerInfo playerInfo,
+}) async {
+  try {
+    await joinLobby(lobby: lobby, playerInfo: playerInfo);
+    await Firestore().deleteDocument(
+      collectionId: FirestoreCollections.invites.name,
+      documentId: invite.id,
+    );
+  } catch (e) {
+    print(e);
+    // Handle or log the error as needed
+    rethrow;
+  }
+}
+
+Future<void> rejectInvite({required Invite invite}) async {
+  await Firestore().deleteDocument(
+    collectionId: FirestoreCollections.invites.name,
+    documentId: invite.id,
+  );
+}
+
+Stream<QuerySnapshot<Map<String, dynamic>>> subscribeToInvites({
+  required String playerId,
+}) {
+  final subscription = Firestore.instance
+      .collection(FirestoreCollections.invites.name)
+      .where('receiverId', isEqualTo: playerId)
+      .snapshots();
+  return subscription;
 }

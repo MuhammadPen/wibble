@@ -24,18 +24,50 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => Store(),
-      child: MaterialApp(
-        title: 'Wibble',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        ),
-        home: Mainmenu(),
-        routes: {
-          '/mainmenu': (context) => Mainmenu(),
-          '/gameplay': (context) => Gameplay(),
-          '/privateLobby': (context) => PrivateLobby(),
-        },
+      child: MyAppContent(),
+    );
+  }
+}
+
+class MyAppContent extends StatefulWidget {
+  const MyAppContent({super.key});
+
+  @override
+  State<MyAppContent> createState() => _MyAppContentState();
+}
+
+class _MyAppContentState extends State<MyAppContent> {
+  var _isSubscribed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.read<Store>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_isSubscribed) return;
+      final inviteStream = subscribeToInvites(playerId: store.user.id);
+      inviteStream.listen((event) {
+        final data = event.docs
+            .map((doc) => Invite.fromJson(doc.data()))
+            .toList();
+        store.invites = data;
+        setState(() {
+          _isSubscribed = true;
+        });
+      });
+    });
+
+    return MaterialApp(
+      title: 'Wibble',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
+      home: Mainmenu(),
+      routes: {
+        '/mainmenu': (context) => Mainmenu(),
+        '/gameplay': (context) => Gameplay(),
+        '/privateLobby': (context) => PrivateLobby(),
+      },
     );
   }
 }
@@ -58,9 +90,11 @@ class Store extends ChangeNotifier {
     rank: Rank.bronze,
     createdAt: DateTime.now(),
   );
+  var invites = <Invite>[];
 
   // Subscription management
   StreamSubscription<DocumentSnapshot>? lobbySubscription;
+  StreamSubscription<DocumentSnapshot>? invitesSubscription;
   bool _isMatchmaking = false;
 
   bool get isMatchmaking => _isMatchmaking;
@@ -77,9 +111,16 @@ class Store extends ChangeNotifier {
     notifyListeners();
   }
 
+  void cancelInvitesSubscription() {
+    invitesSubscription?.cancel();
+    invitesSubscription = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     lobbySubscription?.cancel();
+    invitesSubscription?.cancel();
     super.dispose();
   }
 
@@ -109,6 +150,7 @@ class Store extends ChangeNotifier {
 
       lobbySubscription = lobbyStream.listen((event) {
         final data = event.data() as Map<String, dynamic>;
+        print("data from firestore 🔥: $data");
         lobbyData = Lobby.fromJson(data);
         notifyListeners();
       });

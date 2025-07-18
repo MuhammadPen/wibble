@@ -40,6 +40,17 @@ class Firestore {
     await instance.collection(collectionId).doc(documentId).delete();
   }
 
+  Future<bool> doesDocumentExist({
+    required String collectionId,
+    required String documentId,
+  }) async {
+    final doc = await getDocument(
+      collectionId: collectionId,
+      documentId: documentId,
+    );
+    return doc.exists;
+  }
+
   Future<Stream<DocumentSnapshot>> subscribeToDocument({
     required String collectionId,
     required String documentId,

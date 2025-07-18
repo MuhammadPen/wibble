@@ -22,7 +22,6 @@ class _GameplayState extends State<Gameplay> {
   // Game state variables
   List<List<String>> _guessGrid = [];
   final List<int> _cursorPosition = [0, 0]; // [row, column]
-  bool _startGamePressed = false;
   int _currentRound = 0;
   String _currentWord = "";
   int _score = 0;
@@ -90,19 +89,17 @@ class _GameplayState extends State<Gameplay> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   GameStatus(
+                    currentUserId: store.user.id,
+                    players: lobbyData.players,
                     remainingSeconds: _remainingSeconds,
-                    user: store.user,
-                    playerScore: _score,
-                    opponent: opponent,
                   ),
                   SizedBox(height: 20),
-                  if (_startGamePressed)
-                    CountdownWidget(
-                      durationInSeconds: 3,
-                      onCountdownComplete: () {
-                        _startGameTimer();
-                      },
-                    ),
+                  CountdownWidget(
+                    durationInSeconds: 3,
+                    onCountdownComplete: () {
+                      _startGameTimer();
+                    },
+                  ),
                   if (_showCurrentWord)
                     Text(
                       'Word was: $_currentWord',
@@ -366,6 +363,11 @@ class _GameplayState extends State<Gameplay> {
     );
   }
 
+  // void _onStoreChanged() async {
+  //   // get lobby from store
+  //   final lobbyData = context.read<Store>().lobbyData;
+  // }
+
   void _selectWord() async {
     final String wordList = await DefaultAssetBundle.of(
       context,
@@ -379,21 +381,38 @@ class _GameplayState extends State<Gameplay> {
 
   void _startGameTimer() async {
     final store = context.read<Store>();
+    final localStartTime = DateTime.now();
 
     var lobbyStartTime = await getLobbyStartTime(lobbyId: store.lobbyData.id);
+    late DateTime actualStartTime;
+
     if (lobbyStartTime == null) {
       // set lobby start time
-      store.lobbyData.startTime = DateTime.now();
+      store.lobbyData.startTime = localStartTime;
       await setLobbyStartTime(
         lobbyId: store.lobbyData.id,
-        startTime: DateTime.now(),
+        startTime: localStartTime,
       );
+      actualStartTime = localStartTime;
     } else {
       store.lobbyData.startTime = lobbyStartTime;
+      actualStartTime = lobbyStartTime;
+    }
+
+    // Calculate initial remaining time based on actual lobby start time
+    final initialElapsedTime = DateTime.now().difference(actualStartTime);
+    setState(() {
+      _remainingSeconds = _roundDuration - initialElapsedTime.inSeconds;
+    });
+
+    // If time is already up, handle it immediately
+    if (_remainingSeconds <= 0) {
+      _handleTimeUp();
+      return;
     }
 
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final elapsedTime = DateTime.now().difference(store.lobbyData.startTime);
+      final elapsedTime = DateTime.now().difference(actualStartTime);
       if (_roundDuration - elapsedTime.inSeconds <= 0) {
         _handleTimeUp();
         timer.cancel();
