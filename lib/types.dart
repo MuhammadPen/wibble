@@ -43,14 +43,14 @@ enum Routes { mainmenu, gameplay, privateLobby }
 class Invite {
   final String id;
   final String lobbyId;
-  final String senderId;
+  final User sender;
   final String receiverId;
   final DateTime createdAt;
 
   Invite({
     required this.id,
     required this.lobbyId,
-    required this.senderId,
+    required this.sender,
     required this.receiverId,
     required this.createdAt,
   });

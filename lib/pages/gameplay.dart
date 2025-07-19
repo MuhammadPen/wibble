@@ -10,6 +10,7 @@ import 'package:wibble/components/word_grid.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/types.dart';
+import 'package:wibble/utils/lobby.dart';
 
 class Gameplay extends StatefulWidget {
   const Gameplay({super.key});
@@ -308,17 +309,7 @@ class _GameplayState extends State<Gameplay> {
     //leave lobby
     await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
     //clear lobby in store
-    store.lobbyData = Lobby(
-      id: '',
-      rounds: 3,
-      wordLength: 5,
-      maxAttempts: 6,
-      playerCount: 1,
-      players: {},
-      startTime: DateTime.now(),
-      maxPlayers: 2,
-      type: LobbyType.oneVOne,
-    );
+    store.lobbyData = getEmptyLobby();
 
     if (myScore > opponentScore) {
       CustomDialog.show(
@@ -327,6 +318,9 @@ class _GameplayState extends State<Gameplay> {
         message: 'You win!',
         buttonText: 'Back to Menu',
         onClose: () {
+          // reset lobby data
+          store.lobbyData = getEmptyLobby();
+          store.cancelLobbySubscription();
           Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
         },
       );
@@ -337,6 +331,9 @@ class _GameplayState extends State<Gameplay> {
         message: 'You lost :(',
         buttonText: 'Back to Menu',
         onClose: () {
+          // reset lobby data
+          store.lobbyData = getEmptyLobby();
+          store.cancelLobbySubscription();
           Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
         },
       );
@@ -347,6 +344,9 @@ class _GameplayState extends State<Gameplay> {
         message: 'Game tied!',
         buttonText: 'Back to Menu',
         onClose: () {
+          // reset lobby data
+          store.lobbyData = getEmptyLobby();
+          store.cancelLobbySubscription();
           Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
         },
       );

@@ -9,7 +9,7 @@ part of 'types.dart';
 Invite _$InviteFromJson(Map<String, dynamic> json) => Invite(
   id: json['id'] as String,
   lobbyId: json['lobbyId'] as String,
-  senderId: json['senderId'] as String,
+  sender: User.fromJson(json['sender'] as Map<String, dynamic>),
   receiverId: json['receiverId'] as String,
   createdAt: DateTime.parse(json['createdAt'] as String),
 );
@@ -17,7 +17,7 @@ Invite _$InviteFromJson(Map<String, dynamic> json) => Invite(
 Map<String, dynamic> _$InviteToJson(Invite instance) => <String, dynamic>{
   'id': instance.id,
   'lobbyId': instance.lobbyId,
-  'senderId': instance.senderId,
+  'sender': instance.sender.toJson(),
   'receiverId': instance.receiverId,
   'createdAt': instance.createdAt.toIso8601String(),
 };

@@ -10,12 +10,14 @@ import 'package:fpjs_pro_plugin/region.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wibble/components/how_to_play.dart';
+import 'package:wibble/components/user_card.dart';
 import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/styles/button.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/identity.dart';
+import 'package:wibble/utils/lobby.dart';
 
 class Mainmenu extends StatefulWidget {
   const Mainmenu({super.key});
@@ -33,10 +35,6 @@ class _MainmenuState extends State<Mainmenu> {
   Widget build(BuildContext context) {
     final store = Provider.of<Store>(context);
     final isMatchmaking = store.isMatchmaking;
-
-    if (identifiedUser != null) {
-      store.user = identifiedUser!;
-    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_hasCheckedResumeMatch) {
@@ -74,17 +72,7 @@ class _MainmenuState extends State<Mainmenu> {
                           playerId: store.user.id,
                         );
                         store.isMatchmaking = false;
-                        store.lobbyData = Lobby(
-                          id: '',
-                          rounds: 3,
-                          wordLength: 5,
-                          maxAttempts: 6,
-                          playerCount: 0,
-                          maxPlayers: 2,
-                          type: LobbyType.oneVOne,
-                          players: {},
-                          startTime: null,
-                        );
+                        store.lobbyData = getEmptyLobby();
                       } catch (e, stackTrace) {
                         print('Error in matchmaking: $e');
                         print('Stack trace: $stackTrace');
@@ -96,19 +84,26 @@ class _MainmenuState extends State<Mainmenu> {
               )
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Welcome message
                   if (store.user.username.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 30),
-                      child: Text(
-                        'Welcome ${store.user.username}!',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Welcome ',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.blue,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          UserCard(user: store.user),
+                        ],
                       ),
                     ),
                   SizedBox(height: 10),
@@ -199,6 +194,8 @@ class _MainmenuState extends State<Mainmenu> {
     );
     final user = await identifyUser(context: context);
     if (user != null) {
+      final store = context.read<Store>();
+      store.user = user; // Set it in the store immediately
       setState(() {
         identifiedUser = user;
       });
@@ -223,11 +220,12 @@ class _MainmenuState extends State<Mainmenu> {
     final cachedUser = prefs.getString(UserCacheKeys.user.name);
     final store = context.read<Store>();
 
-    print(store.lobbyData.toJson());
-
     // Only check lobby status if we have a valid lobby with an ID
     if (store.lobbyData.id.isNotEmpty) {
       if (cachedUser == null) {
+        return;
+      }
+      if (store.lobbyData.players.isEmpty) {
         return;
       }
 

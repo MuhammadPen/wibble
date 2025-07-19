@@ -5,7 +5,7 @@ import 'package:wibble/types.dart';
 
 Future<Lobby?> checkForOnGoingMatch({required String playerId}) async {
   final lobbies = await getLobbyByPlayerId(playerId: playerId);
-  if (lobbies.docs.isEmpty) {
+  if (lobbies == null || lobbies.docs.isEmpty) {
     return null;
   }
   return Lobby.fromJson(lobbies.docs.first.data());
@@ -29,13 +29,20 @@ Future<String> createUser({required User user}) async {
   return user.id;
 }
 
-Future<QuerySnapshot<Map<String, dynamic>>> getLobbyByPlayerId({
+Future<QuerySnapshot<Map<String, dynamic>>?> getLobbyByPlayerId({
   required String playerId,
 }) async {
+  if (playerId.isEmpty) {
+    return null;
+  }
   final lobbies = await Firestore.instance
       .collection(FirestoreCollections.multiplayer.name)
-      .where('players.$playerId', isNotEqualTo: null)
+      .where('players.$playerId', isNotEqualTo: false)
       .get();
+
+  if (lobbies.docs.isEmpty) {
+    return null;
+  }
 
   return lobbies;
 }
@@ -108,10 +115,36 @@ Future<void> joinLobby({
   );
 }
 
+Future<Lobby?> getLobby({required String lobbyId}) async {
+  final doc = await Firestore().getDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobbyId,
+  );
+  return Lobby.fromJson(doc.data() as Map<String, dynamic>);
+}
+
 Future<void> leaveLobby({
   required String lobbyId,
   required String playerId,
 }) async {
+  // if lobby player count is 1, delete the lobby
+  // else remove the player from the lobby
+
+  // get lobby
+  final lobby = await getLobby(lobbyId: lobbyId);
+
+  if (lobby == null) {
+    return;
+  }
+
+  if (lobby.players.length <= 1) {
+    await Firestore().deleteDocument(
+      collectionId: FirestoreCollections.multiplayer.name,
+      documentId: lobbyId,
+    );
+    return;
+  }
+
   await Firestore().updateDocument(
     collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobbyId,

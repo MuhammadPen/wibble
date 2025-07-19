@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wibble/components/invitation.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/pages/gameplay.dart';
 import 'package:wibble/pages/mainmenu.dart';
 import 'package:wibble/pages/private_lobby.dart';
 import 'package:wibble/types.dart';
+import 'package:wibble/utils/lobby.dart';
 
 import 'firebase/index.dart';
 
@@ -37,54 +41,29 @@ class MyAppContent extends StatefulWidget {
 }
 
 class _MyAppContentState extends State<MyAppContent> {
-  var _isSubscribed = false;
-
   @override
   Widget build(BuildContext context) {
-    final store = context.read<Store>();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_isSubscribed) return;
-      final inviteStream = subscribeToInvites(playerId: store.user.id);
-      inviteStream.listen((event) {
-        final data = event.docs
-            .map((doc) => Invite.fromJson(doc.data()))
-            .toList();
-        store.invites = data;
-        setState(() {
-          _isSubscribed = true;
-        });
-      });
-    });
-
     return MaterialApp(
       title: 'Wibble',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
-      home: Mainmenu(),
+      home: Stack(children: [Mainmenu(), const InvitationWidget()]),
       routes: {
-        '/mainmenu': (context) => Mainmenu(),
-        '/gameplay': (context) => Gameplay(),
-        '/privateLobby': (context) => PrivateLobby(),
+        '/mainmenu': (context) =>
+            Stack(children: [Mainmenu(), const InvitationWidget()]),
+        '/gameplay': (context) =>
+            Stack(children: [Gameplay(), const InvitationWidget()]),
+        '/privateLobby': (context) =>
+            Stack(children: [PrivateLobby(), const InvitationWidget()]),
       },
     );
   }
 }
 
 class Store extends ChangeNotifier {
-  var lobbyData = Lobby(
-    id: '',
-    rounds: 3,
-    wordLength: 5,
-    maxAttempts: 6,
-    playerCount: 1,
-    players: {},
-    startTime: DateTime.now(),
-    maxPlayers: 2,
-    type: LobbyType.oneVOne,
-  );
-  var user = User(
+  var lobbyData = getEmptyLobby();
+  var _user = User(
     id: '',
     username: '',
     rank: Rank.bronze,
@@ -92,10 +71,71 @@ class Store extends ChangeNotifier {
   );
   var invites = <Invite>[];
 
+  User get user => _user;
+  set user(User newUser) {
+    _user = newUser;
+    notifyListeners();
+    // Start invite subscription when user is set (if not already started)
+    _startInviteSubscription();
+  }
+
   // Subscription management
   StreamSubscription<DocumentSnapshot>? lobbySubscription;
-  StreamSubscription<DocumentSnapshot>? invitesSubscription;
+  StreamSubscription<QuerySnapshot>? invitesSubscription;
   bool _isMatchmaking = false;
+
+  Store() {
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedUserJson = prefs.getString(UserCacheKeys.user.name);
+
+      if (cachedUserJson != null) {
+        final cachedUser = User.fromJson(jsonDecode(cachedUserJson));
+        _user = cachedUser;
+        notifyListeners();
+
+        // Start invite subscription after user is initialized
+        _startInviteSubscription();
+      }
+      // If no cached user, keep the default values already set
+    } catch (e) {
+      print('Error loading user from shared preferences: $e');
+      // If error occurs, keep the default values already set
+    }
+  }
+
+  void _startInviteSubscription() {
+    // Only start subscription if user ID is not empty and subscription is not already active
+    if (user.id.isEmpty || invitesSubscription != null) return;
+
+    try {
+      final inviteStream = subscribeToInvites(playerId: user.id);
+      invitesSubscription = inviteStream.listen((event) {
+        final data = event.docs
+            .map((doc) => Invite.fromJson(doc.data()))
+            .toList();
+
+        print("💌 invites in store: ${data.length} invite(s)");
+        if (data.isNotEmpty) {
+          print("💌 first invite: ${data.first.toJson()}");
+        }
+
+        invites = data;
+        notifyListeners();
+      });
+    } catch (e) {
+      print('Error starting invite subscription: $e');
+    }
+  }
+
+  // Public method to manually start invite subscription (useful for debugging)
+  void startInviteSubscription() {
+    _startInviteSubscription();
+  }
 
   bool get isMatchmaking => _isMatchmaking;
   set isMatchmaking(bool value) {
@@ -114,6 +154,7 @@ class Store extends ChangeNotifier {
   void cancelInvitesSubscription() {
     invitesSubscription?.cancel();
     invitesSubscription = null;
+    invites.clear();
     notifyListeners();
   }
 
@@ -126,6 +167,8 @@ class Store extends ChangeNotifier {
 
   Future<void> resumeMatch() async {
     final lobby = await checkForOnGoingMatch(playerId: user.id);
+
+    print("🦞 lobby: ${lobby?.toJson()}");
     if (lobby != null) {
       lobbyData = lobby;
       notifyListeners();
@@ -149,9 +192,11 @@ class Store extends ChangeNotifier {
       );
 
       lobbySubscription = lobbyStream.listen((event) {
-        final data = event.data() as Map<String, dynamic>;
-        lobbyData = Lobby.fromJson(data);
-        notifyListeners();
+        final data = event.data();
+        if (data != null) {
+          lobbyData = Lobby.fromJson(data as Map<String, dynamic>);
+          notifyListeners();
+        }
       });
     } catch (error) {
       notifyListeners();
@@ -194,3 +239,5 @@ class Store extends ChangeNotifier {
     }
   }
 }
+
+//TODO doesnt resume (to menus) properly when launching for the first time

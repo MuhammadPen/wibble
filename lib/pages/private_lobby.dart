@@ -8,6 +8,7 @@ import 'package:wibble/firebase/firestore/index.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/styles/button.dart';
 import 'package:wibble/types.dart';
+import 'package:wibble/utils/lobby.dart';
 
 class PrivateLobby extends StatefulWidget {
   const PrivateLobby({super.key});
@@ -17,7 +18,6 @@ class PrivateLobby extends StatefulWidget {
 }
 
 class _PrivateLobbyState extends State<PrivateLobby> {
-  void _printHello() async {}
   var _showUserDoesNotExist = false;
   var _showInviteSent = false;
 
@@ -28,8 +28,6 @@ class _PrivateLobbyState extends State<PrivateLobby> {
     final isAdmin =
         lobby.players.containsKey(store.user.id) &&
         lobby.players[store.user.id]?.isAdmin == true;
-
-    print(isAdmin);
 
     return Scaffold(
       appBar: null,
@@ -67,7 +65,7 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                   final inviteToSend = Invite(
                     id: Uuid().v4(),
                     lobbyId: lobby.id,
-                    senderId: store.user.id,
+                    sender: store.user,
                     receiverId: userId,
                     createdAt: DateTime.now(),
                   );
@@ -105,8 +103,13 @@ class _PrivateLobbyState extends State<PrivateLobby> {
               children: [
                 ElevatedButton(
                   style: buttonStyle,
-                  onPressed: () {
-                    Navigator.pushNamed(context, "/${Routes.gameplay.name}");
+                  onPressed: () async {
+                    // Set the lobby start time in Firestore
+                    // The global navigation listener will handle the navigation
+                    await setLobbyStartTime(
+                      lobbyId: lobby.id,
+                      startTime: DateTime.now(),
+                    );
                   },
                   child: const Text('Start game'),
                 ),
@@ -120,9 +123,30 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                   style: buttonStyle,
                   onPressed: () async {
                     await cancelPrivateLobby(lobbyId: lobby.id);
+                    store.lobbyData = getEmptyLobby();
+                    store.cancelLobbySubscription();
                     Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
                   },
                   child: const Text('Cancel lobby'),
+                ),
+              ],
+            ),
+          if (!isAdmin)
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  style: buttonStyle,
+                  onPressed: () async {
+                    await leaveLobby(
+                      lobbyId: lobby.id,
+                      playerId: store.user.id,
+                    );
+                    store.lobbyData = getEmptyLobby();
+                    store.cancelLobbySubscription();
+                    Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+                  },
+                  child: const Text('Leave lobby'),
                 ),
               ],
             ),
