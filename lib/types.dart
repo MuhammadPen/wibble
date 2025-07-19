@@ -33,7 +33,7 @@ enum DialogKeys { gameWon, gameLost, gameTied, howToPlay, startGame }
 
 enum FirestoreCollections { users, multiplayer, invites }
 
-enum LobbyType { oneVOne, custom }
+enum LobbyType { oneVOne, custom, private }
 
 enum Rank { bronze, silver, gold, platinum, diamond, master, grandmaster }
 
@@ -94,12 +94,14 @@ class LobbyPlayerInfo {
   int score;
   int round;
   int attempts;
+  bool? isAdmin;
 
   LobbyPlayerInfo({
     required this.user,
     required this.score,
     required this.round,
     required this.attempts,
+    this.isAdmin = false,
   });
 
   // Generated methods:

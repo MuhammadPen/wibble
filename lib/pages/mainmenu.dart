@@ -151,7 +151,8 @@ class _MainmenuState extends State<Mainmenu> {
                   ElevatedButton.icon(
                     icon: Icon(Icons.person),
                     label: Text("Private lobby"),
-                    onPressed: () {
+                    onPressed: () async {
+                      await store.createPrivateLobby();
                       Navigator.pushNamed(
                         context,
                         "/${Routes.privateLobby.name}",
@@ -222,9 +223,29 @@ class _MainmenuState extends State<Mainmenu> {
     final cachedUser = prefs.getString(UserCacheKeys.user.name);
     final store = context.read<Store>();
 
+    print(store.lobbyData.toJson());
+
     // Only check lobby status if we have a valid lobby with an ID
     if (store.lobbyData.id.isNotEmpty) {
-      // Check if lobby is full first - this takes priority
+      if (cachedUser == null) {
+        return;
+      }
+
+      // If on a private lobby and the game has not started, take me to the private lobby page
+      if (store.lobbyData.type == LobbyType.private &&
+          store.lobbyData.startTime == null) {
+        Navigator.pushNamed(context, "/${Routes.privateLobby.name}");
+        return;
+      }
+
+      // If on a private lobby and the game has started, take me to the gameplay page
+      if (store.lobbyData.type == LobbyType.private &&
+          store.lobbyData.startTime != null) {
+        Navigator.pushNamed(context, "/${Routes.gameplay.name}");
+        return;
+      }
+
+      // Check if lobby is full
       final isLobbyFull =
           store.lobbyData.playerCount >= store.lobbyData.maxPlayers;
       if (isLobbyFull && !_hasNavigated) {
@@ -235,15 +256,13 @@ class _MainmenuState extends State<Mainmenu> {
       }
 
       // If user is in lobby but lobby is not full, show matchmaking state
-      if (cachedUser != null) {
-        final isPlayerInLobby = store.lobbyData.players.containsKey(
-          User.fromJson(jsonDecode(cachedUser)).id,
-        );
-        if (isPlayerInLobby && !isLobbyFull && !_hasNavigated) {
-          // Only set matchmaking to true if it's not already true (prevent infinite loop)
-          if (!store.isMatchmaking) {
-            store.isMatchmaking = true;
-          }
+      final isPlayerInLobby = store.lobbyData.players.containsKey(
+        User.fromJson(jsonDecode(cachedUser)).id,
+      );
+      if (isPlayerInLobby && !isLobbyFull && !_hasNavigated) {
+        // Only set matchmaking to true if it's not already true (prevent infinite loop)
+        if (!store.isMatchmaking) {
+          store.isMatchmaking = true;
         }
       }
     }

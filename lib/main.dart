@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/pages/gameplay.dart';
 import 'package:wibble/pages/mainmenu.dart';
-import 'package:wibble/pages/privateLobby.dart';
+import 'package:wibble/pages/private_lobby.dart';
 import 'package:wibble/types.dart';
 
 import 'firebase/index.dart';
@@ -150,9 +150,43 @@ class Store extends ChangeNotifier {
 
       lobbySubscription = lobbyStream.listen((event) {
         final data = event.data() as Map<String, dynamic>;
-        print("data from firestore 🔥: $data");
         lobbyData = Lobby.fromJson(data);
         notifyListeners();
+      });
+    } catch (error) {
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> createPrivateLobby() async {
+    try {
+      final lobbyStream = await startPrivateLobby(
+        playerInfo: LobbyPlayerInfo(
+          user: user,
+          score: 0,
+          round: 0,
+          attempts: 0,
+          isAdmin: true,
+        ),
+      );
+
+      // final lobbyStream = await startPrivateLobbyWithMockUsers(
+      //   playerInfo: LobbyPlayerInfo(
+      //     user: user,
+      //     score: 0,
+      //     round: 0,
+      //     attempts: 0,
+      //     isAdmin: true,
+      //   ),
+      // );
+
+      lobbySubscription = lobbyStream.listen((event) {
+        final data = event.data();
+        if (data != null) {
+          lobbyData = Lobby.fromJson(data as Map<String, dynamic>);
+          notifyListeners();
+        }
       });
     } catch (error) {
       notifyListeners();

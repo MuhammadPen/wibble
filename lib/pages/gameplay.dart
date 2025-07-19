@@ -95,7 +95,7 @@ class _GameplayState extends State<Gameplay> {
                   ),
                   SizedBox(height: 20),
                   CountdownWidget(
-                    durationInSeconds: 3,
+                    durationInSeconds: lobbyData.startTime == null ? 3 : 0,
                     onCountdownComplete: () {
                       _startGameTimer();
                     },
@@ -241,19 +241,23 @@ class _GameplayState extends State<Gameplay> {
 
       // Check if we've reached the maximum number of attempts
       if (_cursorPosition[0] >= _guessGrid.length) {
-        _showCurrentWord = true;
-        // wait for 3 seconds
-        await Future.delayed(const Duration(seconds: 3), () {
-          _showCurrentWord = false;
-        });
         setState(() {
+          _areAttemptsOver = true;
+          _showCurrentWord = true;
+        });
+
+        // wait for 3 seconds
+        await Future.delayed(const Duration(seconds: 3));
+
+        setState(() {
+          _showCurrentWord = false;
           _cursorPosition[0] = 0;
           _cursorPosition[1] = 0;
+          _areAttemptsOver = false;
+          _isCurrentRowFilled = false;
         });
         _selectWord();
         _initializeGameGrid();
-
-        // _areAttemptsOver = true;
       }
     }
 

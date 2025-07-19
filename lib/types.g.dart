@@ -51,6 +51,7 @@ Map<String, dynamic> _$LobbyToJson(Lobby instance) => <String, dynamic>{
 const _$LobbyTypeEnumMap = {
   LobbyType.oneVOne: 'oneVOne',
   LobbyType.custom: 'custom',
+  LobbyType.private: 'private',
 };
 
 LobbyPlayerInfo _$LobbyPlayerInfoFromJson(Map<String, dynamic> json) =>
@@ -59,6 +60,7 @@ LobbyPlayerInfo _$LobbyPlayerInfoFromJson(Map<String, dynamic> json) =>
       score: (json['score'] as num).toInt(),
       round: (json['round'] as num).toInt(),
       attempts: (json['attempts'] as num).toInt(),
+      isAdmin: json['isAdmin'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$LobbyPlayerInfoToJson(LobbyPlayerInfo instance) =>
@@ -67,6 +69,7 @@ Map<String, dynamic> _$LobbyPlayerInfoToJson(LobbyPlayerInfo instance) =>
       'score': instance.score,
       'round': instance.round,
       'attempts': instance.attempts,
+      'isAdmin': instance.isAdmin,
     };
 
 User _$UserFromJson(Map<String, dynamic> json) => User(

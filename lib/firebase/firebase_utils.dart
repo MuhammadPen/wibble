@@ -192,6 +192,75 @@ Future<Stream<DocumentSnapshot>> startMatchmaking({
   return subscription;
 }
 
+Future<Stream<DocumentSnapshot>> startPrivateLobby({
+  required LobbyPlayerInfo playerInfo,
+}) async {
+  final lobbyId = await createLobby(
+    lobby: Lobby(
+      id: Uuid().v4(),
+      rounds: 3,
+      wordLength: 5,
+      maxAttempts: 6,
+      playerCount: 1,
+      maxPlayers: 50,
+      type: LobbyType.private,
+      players: {playerInfo.user.id: playerInfo},
+      startTime: null,
+    ),
+  );
+
+  // Subscribe to the lobby
+  final subscription = await Firestore().subscribeToDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobbyId,
+  );
+
+  return subscription;
+}
+
+Future<Stream<DocumentSnapshot>> startPrivateLobbyWithMockUsers({
+  required LobbyPlayerInfo playerInfo,
+}) async {
+  final lobbyId = await createLobby(
+    lobby: Lobby(
+      id: Uuid().v4(),
+      rounds: 3,
+      wordLength: 5,
+      maxAttempts: 6,
+      playerCount: 1,
+      maxPlayers: 50,
+      type: LobbyType.private,
+      players: {
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+        Uuid().v4(): playerInfo,
+      },
+      startTime: null,
+    ),
+  );
+
+  // Subscribe to the lobby
+  final subscription = await Firestore().subscribeToDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobbyId,
+  );
+
+  return subscription;
+}
+
 Future<void> updatePlayerProgressInLobby({
   required String lobbyId,
   required String playerId,
@@ -251,4 +320,11 @@ Stream<QuerySnapshot<Map<String, dynamic>>> subscribeToInvites({
       .where('receiverId', isEqualTo: playerId)
       .snapshots();
   return subscription;
+}
+
+Future<void> cancelPrivateLobby({required String lobbyId}) async {
+  await Firestore().deleteDocument(
+    collectionId: FirestoreCollections.multiplayer.name,
+    documentId: lobbyId,
+  );
 }
