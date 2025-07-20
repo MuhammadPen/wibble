@@ -119,10 +119,7 @@ class Store extends ChangeNotifier {
             .map((doc) => Invite.fromJson(doc.data()))
             .toList();
 
-        print("💌 invites in store: ${data.length} invite(s)");
-        if (data.isNotEmpty) {
-          print("💌 first invite: ${data.first.toJson()}");
-        }
+        if (data.isNotEmpty) {}
 
         invites = data;
         notifyListeners();
@@ -168,7 +165,6 @@ class Store extends ChangeNotifier {
   Future<void> resumeMatch() async {
     final lobby = await checkForOnGoingMatch(playerId: user.id);
 
-    print("🦞 lobby: ${lobby?.toJson()}");
     if (lobby != null) {
       lobbyData = lobby;
       notifyListeners();

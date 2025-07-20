@@ -254,8 +254,6 @@ class _InvitationWidgetState extends State<InvitationWidget>
       builder: (context, store, child) {
         final invites = store.invites;
 
-        print("💌 invites in invitation widget: ${invites}");
-
         if (invites.isEmpty) {
           return const SizedBox.shrink();
         }

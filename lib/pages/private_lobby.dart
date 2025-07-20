@@ -22,6 +22,19 @@ class _PrivateLobbyState extends State<PrivateLobby> {
   var _showInviteSent = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Listen to store changes
+    final store = context.read<Store>();
+
+    print("🦞 lobby: ${store.lobbyData.toJson()}");
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      store.addListener(_onStoreChanged);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final store = context.read<Store>();
     final lobby = store.lobbyData;
@@ -153,5 +166,16 @@ class _PrivateLobbyState extends State<PrivateLobby> {
         ],
       ),
     );
+  }
+
+  void _onStoreChanged() {
+    final store = context.read<Store>();
+
+    // If on a private lobby and the game has started, take me to the gameplay page
+    if (store.lobbyData.type == LobbyType.private &&
+        store.lobbyData.startTime != null) {
+      Navigator.pushNamed(context, "/${Routes.gameplay.name}");
+      return;
+    }
   }
 }
