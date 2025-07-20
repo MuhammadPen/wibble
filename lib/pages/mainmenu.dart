@@ -55,9 +55,9 @@ class _MainmenuState extends State<Mainmenu> {
                   CircularProgressIndicator(),
                   SizedBox(height: 20),
                   Text(
-                    store.lobbyData.playerCount >= store.lobbyData.maxPlayers
+                    store.lobby.playerCount >= store.lobby.maxPlayers
                         ? 'All players connected, starting match'
-                        : '${store.lobbyData.playerCount} out of ${store.lobbyData.maxPlayers} connected',
+                        : '${store.lobby.playerCount} out of ${store.lobby.maxPlayers} connected',
                     style: TextStyle(fontSize: 18),
                   ),
                   SizedBox(height: 10),
@@ -68,11 +68,11 @@ class _MainmenuState extends State<Mainmenu> {
                       // NOTE on all buttons: loading - disabled when loading
                       try {
                         await leaveLobby(
-                          lobbyId: store.lobbyData.id,
+                          lobbyId: store.lobby.id,
                           playerId: store.user.id,
                         );
                         store.isMatchmaking = false;
-                        store.lobbyData = getEmptyLobby();
+                        store.lobby = getEmptyLobby();
                       } catch (e, stackTrace) {
                         print('Error in matchmaking: $e');
                         print('Stack trace: $stackTrace');
@@ -221,31 +221,23 @@ class _MainmenuState extends State<Mainmenu> {
     final store = context.read<Store>();
 
     // Only check lobby status if we have a valid lobby with an ID
-    if (store.lobbyData.id.isNotEmpty) {
+    if (store.lobby.id.isNotEmpty) {
       if (cachedUser == null) {
         return;
       }
-      if (store.lobbyData.players.isEmpty) {
+      if (store.lobby.players.isEmpty) {
         return;
       }
 
       // If on a private lobby and the game has not started, take me to the private lobby page
-      if (store.lobbyData.type == LobbyType.private &&
-          store.lobbyData.startTime == null) {
+      if (store.lobby.type == LobbyType.private &&
+          store.lobby.startTime == null) {
         Navigator.pushNamed(context, "/${Routes.privateLobby.name}");
         return;
       }
 
-      // If on a private lobby and the game has started, take me to the gameplay page
-      if (store.lobbyData.type == LobbyType.private &&
-          store.lobbyData.startTime != null) {
-        Navigator.pushNamed(context, "/${Routes.gameplay.name}");
-        return;
-      }
-
       // Check if lobby is full
-      final isLobbyFull =
-          store.lobbyData.playerCount >= store.lobbyData.maxPlayers;
+      final isLobbyFull = store.lobby.playerCount >= store.lobby.maxPlayers;
       if (isLobbyFull && !_hasNavigated) {
         _hasNavigated = true;
         store.isMatchmaking = false;
@@ -254,7 +246,7 @@ class _MainmenuState extends State<Mainmenu> {
       }
 
       // If user is in lobby but lobby is not full, show matchmaking state
-      final isPlayerInLobby = store.lobbyData.players.containsKey(
+      final isPlayerInLobby = store.lobby.players.containsKey(
         User.fromJson(jsonDecode(cachedUser)).id,
       );
       if (isPlayerInLobby && !isLobbyFull && !_hasNavigated) {

@@ -27,8 +27,6 @@ class _PrivateLobbyState extends State<PrivateLobby> {
     // Listen to store changes
     final store = context.read<Store>();
 
-    print("🦞 lobby: ${store.lobbyData.toJson()}");
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       store.addListener(_onStoreChanged);
     });
@@ -37,7 +35,7 @@ class _PrivateLobbyState extends State<PrivateLobby> {
   @override
   Widget build(BuildContext context) {
     final store = context.read<Store>();
-    final lobby = store.lobbyData;
+    final lobby = store.lobby;
     final isAdmin =
         lobby.players.containsKey(store.user.id) &&
         lobby.players[store.user.id]?.isAdmin == true;
@@ -118,7 +116,7 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                   style: buttonStyle,
                   onPressed: () async {
                     // Set the lobby start time in Firestore
-                    // The global navigation listener will handle the navigation
+                    // The navigation listener will handle the navigation
                     await setLobbyStartTime(
                       lobbyId: lobby.id,
                       startTime: DateTime.now(),
@@ -136,7 +134,7 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                   style: buttonStyle,
                   onPressed: () async {
                     await cancelPrivateLobby(lobbyId: lobby.id);
-                    store.lobbyData = getEmptyLobby();
+                    store.lobby = getEmptyLobby();
                     store.cancelLobbySubscription();
                     Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
                   },
@@ -155,7 +153,7 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                       lobbyId: lobby.id,
                       playerId: store.user.id,
                     );
-                    store.lobbyData = getEmptyLobby();
+                    store.lobby = getEmptyLobby();
                     store.cancelLobbySubscription();
                     Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
                   },
@@ -172,8 +170,8 @@ class _PrivateLobbyState extends State<PrivateLobby> {
     final store = context.read<Store>();
 
     // If on a private lobby and the game has started, take me to the gameplay page
-    if (store.lobbyData.type == LobbyType.private &&
-        store.lobbyData.startTime != null) {
+    if (store.lobby.type == LobbyType.private &&
+        store.lobby.startTime != null) {
       Navigator.pushNamed(context, "/${Routes.gameplay.name}");
       return;
     }

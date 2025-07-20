@@ -40,15 +40,7 @@ class _GameplayState extends State<Gameplay> {
   @override
   Widget build(BuildContext context) {
     final store = context.read<Store>();
-    final lobbyData = store.lobbyData;
-    LobbyPlayerInfo? opponent;
-    try {
-      opponent = lobbyData.players.values.firstWhere(
-        (e) => e.user.id != store.user.id,
-      );
-    } catch (e) {
-      print('No opponent found');
-    }
+    final lobbyData = store.lobby;
 
     return PopScope(
       canPop: false,
@@ -153,7 +145,7 @@ class _GameplayState extends State<Gameplay> {
 
   int _getOpponentScore() {
     final store = context.read<Store>();
-    final lobbyData = context.read<Store>().lobbyData;
+    final lobbyData = context.read<Store>().lobby;
 
     LobbyPlayerInfo? opponent;
     try {
@@ -170,7 +162,7 @@ class _GameplayState extends State<Gameplay> {
 
   int _getPlayerScore() {
     final store = context.read<Store>();
-    final lobbyData = context.read<Store>().lobbyData;
+    final lobbyData = context.read<Store>().lobby;
 
     final LobbyPlayerInfo? myPlayer = lobbyData.players[store.user.id];
 
@@ -265,7 +257,7 @@ class _GameplayState extends State<Gameplay> {
     // update player progress in lobby
     // if the lobby doesnt exist this will just error out. can ignore that
     updatePlayerProgressInLobby(
-      lobbyId: context.read<Store>().lobbyData.id,
+      lobbyId: context.read<Store>().lobby.id,
       playerId: context.read<Store>().user.id,
       score: _getPlayerScore(),
       round: _currentRound,
@@ -301,7 +293,7 @@ class _GameplayState extends State<Gameplay> {
     });
 
     final store = context.read<Store>();
-    final lobbyData = store.lobbyData;
+    final lobbyData = store.lobby;
 
     final int myScore = _getPlayerScore();
     final int opponentScore = _getOpponentScore();
@@ -309,7 +301,7 @@ class _GameplayState extends State<Gameplay> {
     //leave lobby
     await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
     //clear lobby in store
-    store.lobbyData = getEmptyLobby();
+    store.lobby = getEmptyLobby();
 
     if (myScore > opponentScore) {
       CustomDialog.show(
@@ -319,7 +311,7 @@ class _GameplayState extends State<Gameplay> {
         buttonText: 'Back to Menu',
         onClose: () {
           // reset lobby data
-          store.lobbyData = getEmptyLobby();
+          store.lobby = getEmptyLobby();
           store.cancelLobbySubscription();
           Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
         },
@@ -332,7 +324,7 @@ class _GameplayState extends State<Gameplay> {
         buttonText: 'Back to Menu',
         onClose: () {
           // reset lobby data
-          store.lobbyData = getEmptyLobby();
+          store.lobby = getEmptyLobby();
           store.cancelLobbySubscription();
           Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
         },
@@ -345,7 +337,7 @@ class _GameplayState extends State<Gameplay> {
         buttonText: 'Back to Menu',
         onClose: () {
           // reset lobby data
-          store.lobbyData = getEmptyLobby();
+          store.lobby = getEmptyLobby();
           store.cancelLobbySubscription();
           Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
         },
@@ -358,8 +350,8 @@ class _GameplayState extends State<Gameplay> {
   /// Initialize the game grid based on lobby settings
   void _initializeGameGrid() {
     final appStore = context.read<Store>();
-    final wordLength = appStore.lobbyData.wordLength;
-    final maxAttempts = appStore.lobbyData.maxAttempts;
+    final wordLength = appStore.lobby.wordLength;
+    final maxAttempts = appStore.lobby.maxAttempts;
 
     _guessGrid = List.generate(
       maxAttempts,
@@ -387,19 +379,19 @@ class _GameplayState extends State<Gameplay> {
     final store = context.read<Store>();
     final localStartTime = DateTime.now();
 
-    var lobbyStartTime = await getLobbyStartTime(lobbyId: store.lobbyData.id);
+    var lobbyStartTime = await getLobbyStartTime(lobbyId: store.lobby.id);
     late DateTime actualStartTime;
 
     if (lobbyStartTime == null) {
       // set lobby start time
-      store.lobbyData.startTime = localStartTime;
+      store.lobby.startTime = localStartTime;
       await setLobbyStartTime(
-        lobbyId: store.lobbyData.id,
+        lobbyId: store.lobby.id,
         startTime: localStartTime,
       );
       actualStartTime = localStartTime;
     } else {
-      store.lobbyData.startTime = lobbyStartTime;
+      store.lobby.startTime = lobbyStartTime;
       actualStartTime = lobbyStartTime;
     }
 
@@ -430,7 +422,7 @@ class _GameplayState extends State<Gameplay> {
 
   void _updateScore() {
     final store = context.read<Store>();
-    final lobbyData = store.lobbyData;
+    final lobbyData = store.lobby;
 
     final attemptsUsed =
         _cursorPosition[0] + 1; // +1 because cursor position is 0-indexed

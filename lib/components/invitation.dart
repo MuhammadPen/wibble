@@ -53,7 +53,7 @@ class _InvitationWidgetState extends State<InvitationWidget>
 
       // Check if user is already in a lobby
       final isInLobby =
-          store.lobbyData.id.isNotEmpty && store.lobbyData.players.isNotEmpty;
+          store.lobby.id.isNotEmpty && store.lobby.players.isNotEmpty;
 
       if (isInLobby) {
         // Show confirmation dialog
@@ -88,10 +88,10 @@ class _InvitationWidgetState extends State<InvitationWidget>
       // Cancel all existing lobby subscriptions and clear store lobby data
       if (isInLobby) {
         // Leave the current lobby if user was in one
-        await leaveLobby(lobbyId: store.lobbyData.id, playerId: store.user.id);
+        await leaveLobby(lobbyId: store.lobby.id, playerId: store.user.id);
       }
       store.cancelLobbySubscription();
-      store.lobbyData = getEmptyLobby();
+      store.lobby = getEmptyLobby();
 
       // Get the lobby data for the invite
       final lobbyDoc = await Firestore().getDocument(
@@ -144,7 +144,7 @@ class _InvitationWidgetState extends State<InvitationWidget>
           startTime: lobby.startTime,
           players: {...lobby.players, store.user.id: playerInfo},
         );
-        store.lobbyData = updatedLobby;
+        store.lobby = updatedLobby;
 
         // Start lobby subscription to stay connected
         final lobbyStream = await Firestore().subscribeToDocument(
@@ -155,7 +155,7 @@ class _InvitationWidgetState extends State<InvitationWidget>
         store.lobbySubscription = lobbyStream.listen((event) {
           final data = event.data();
           if (data != null) {
-            store.lobbyData = Lobby.fromJson(data as Map<String, dynamic>);
+            store.lobby = Lobby.fromJson(data as Map<String, dynamic>);
           }
         });
 

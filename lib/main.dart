@@ -62,15 +62,19 @@ class _MyAppContentState extends State<MyAppContent> {
 }
 
 class Store extends ChangeNotifier {
-  var lobbyData = getEmptyLobby();
+  var _lobby = getEmptyLobby();
+  Lobby get lobby => _lobby;
+  set lobby(Lobby newLobby) {
+    _lobby = newLobby;
+    notifyListeners();
+  }
+
   var _user = User(
     id: '',
     username: '',
     rank: Rank.bronze,
     createdAt: DateTime.now(),
   );
-  var invites = <Invite>[];
-
   User get user => _user;
   set user(User newUser) {
     _user = newUser;
@@ -78,6 +82,8 @@ class Store extends ChangeNotifier {
     // Start invite subscription when user is set (if not already started)
     _startInviteSubscription();
   }
+
+  var invites = <Invite>[];
 
   // Subscription management
   StreamSubscription<DocumentSnapshot>? lobbySubscription;
@@ -118,8 +124,6 @@ class Store extends ChangeNotifier {
         final data = event.docs
             .map((doc) => Invite.fromJson(doc.data()))
             .toList();
-
-        if (data.isNotEmpty) {}
 
         invites = data;
         notifyListeners();
@@ -166,7 +170,7 @@ class Store extends ChangeNotifier {
     final lobby = await checkForOnGoingMatch(playerId: user.id);
 
     if (lobby != null) {
-      lobbyData = lobby;
+      this.lobby = lobby;
       notifyListeners();
     }
   }
@@ -190,7 +194,7 @@ class Store extends ChangeNotifier {
       lobbySubscription = lobbyStream.listen((event) {
         final data = event.data();
         if (data != null) {
-          lobbyData = Lobby.fromJson(data as Map<String, dynamic>);
+          _lobby = Lobby.fromJson(data as Map<String, dynamic>);
           notifyListeners();
         }
       });
@@ -225,7 +229,7 @@ class Store extends ChangeNotifier {
       lobbySubscription = lobbyStream.listen((event) {
         final data = event.data();
         if (data != null) {
-          lobbyData = Lobby.fromJson(data as Map<String, dynamic>);
+          _lobby = Lobby.fromJson(data as Map<String, dynamic>);
           notifyListeners();
         }
       });
