@@ -29,11 +29,30 @@ class Mainmenu extends StatefulWidget {
 class _MainmenuState extends State<Mainmenu> {
   bool _hasNavigated = false; // Add flag to prevent multiple navigations
   User? identifiedUser;
+  late Store _store;
   bool _hasCheckedResumeMatch = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initFingerprint();
+    });
+
+    _store = context.read<Store>();
+    _store.addListener(_onStoreChanged);
+  }
+
+  @override
+  void dispose() {
+    _store.removeListener(_onStoreChanged);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final store = Provider.of<Store>(context);
+    final store = context.watch<Store>();
     final isMatchmaking = store.isMatchmaking;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -148,7 +167,7 @@ class _MainmenuState extends State<Mainmenu> {
                     label: Text("Private lobby"),
                     onPressed: () async {
                       await store.createPrivateLobby();
-                      Navigator.pushNamed(
+                      Navigator.pushReplacementNamed(
                         context,
                         "/${Routes.privateLobby.name}",
                       );
@@ -180,13 +199,6 @@ class _MainmenuState extends State<Mainmenu> {
     );
   }
 
-  @override
-  void dispose() {
-    final store = context.read<Store>();
-    store.removeListener(_onStoreChanged);
-    super.dispose();
-  }
-
   void initFingerprint() async {
     await FpjsProPlugin.initFpjs(
       Env.FINGERPRINT_API_KEY, // insert your API key here
@@ -202,23 +214,11 @@ class _MainmenuState extends State<Mainmenu> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      initFingerprint();
-    });
-
-    // Listen to store changes
-    final store = context.read<Store>();
-    store.addListener(_onStoreChanged);
-  }
-
   void _onStoreChanged() async {
+    // fetch the store again to get updated values
+    final store = context.read<Store>();
     final prefs = await SharedPreferences.getInstance();
     final cachedUser = prefs.getString(UserCacheKeys.user.name);
-    final store = context.read<Store>();
 
     // Only check lobby status if we have a valid lobby with an ID
     if (store.lobby.id.isNotEmpty) {
@@ -232,7 +232,7 @@ class _MainmenuState extends State<Mainmenu> {
       // If on a private lobby and the game has not started, take me to the private lobby page
       if (store.lobby.type == LobbyType.private &&
           store.lobby.startTime == null) {
-        Navigator.pushNamed(context, "/${Routes.privateLobby.name}");
+        Navigator.pushReplacementNamed(context, "/${Routes.privateLobby.name}");
         return;
       }
 
@@ -241,7 +241,7 @@ class _MainmenuState extends State<Mainmenu> {
       if (isLobbyFull && !_hasNavigated) {
         _hasNavigated = true;
         store.isMatchmaking = false;
-        Navigator.pushNamed(context, "/${Routes.gameplay.name}");
+        Navigator.pushReplacementNamed(context, "/${Routes.gameplay.name}");
         return;
       }
 

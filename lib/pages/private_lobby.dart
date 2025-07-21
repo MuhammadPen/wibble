@@ -18,23 +18,26 @@ class PrivateLobby extends StatefulWidget {
 }
 
 class _PrivateLobbyState extends State<PrivateLobby> {
+  late Store _store;
   var _showUserDoesNotExist = false;
   var _showInviteSent = false;
 
   @override
   void initState() {
     super.initState();
-    // Listen to store changes
-    final store = context.read<Store>();
+    _store = context.read<Store>();
+    _store.addListener(_onStoreChanged);
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      store.addListener(_onStoreChanged);
-    });
+  @override
+  void dispose() {
+    _store.removeListener(_onStoreChanged);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final store = context.read<Store>();
+    final store = context.watch<Store>();
     final lobby = store.lobby;
     final isAdmin =
         lobby.players.containsKey(store.user.id) &&
@@ -136,7 +139,10 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                     await cancelPrivateLobby(lobbyId: lobby.id);
                     store.lobby = getEmptyLobby();
                     store.cancelLobbySubscription();
-                    Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+                    Navigator.pushReplacementNamed(
+                      context,
+                      "/${Routes.mainmenu.name}",
+                    );
                   },
                   child: const Text('Cancel lobby'),
                 ),
@@ -155,7 +161,10 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                     );
                     store.lobby = getEmptyLobby();
                     store.cancelLobbySubscription();
-                    Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+                    Navigator.pushReplacementNamed(
+                      context,
+                      "/${Routes.mainmenu.name}",
+                    );
                   },
                   child: const Text('Leave lobby'),
                 ),
@@ -167,13 +176,22 @@ class _PrivateLobbyState extends State<PrivateLobby> {
   }
 
   void _onStoreChanged() {
+    // fetch the store again to get updated values
     final store = context.read<Store>();
+    //get current route
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    print("🔴 currentRoute: $currentRoute");
+    if (currentRoute == "/${Routes.privateLobby.name}") {
+      return;
+    }
 
     // If on a private lobby and the game has started, take me to the gameplay page
     if (store.lobby.type == LobbyType.private &&
         store.lobby.startTime != null) {
-      Navigator.pushNamed(context, "/${Routes.gameplay.name}");
+      Navigator.pushReplacementNamed(context, "/${Routes.gameplay.name}");
       return;
     }
   }
 }
+
+// leave private lobby screen when admin cancels the lobby

@@ -15,6 +15,7 @@ class InvitationWidget extends StatefulWidget {
 
 class _InvitationWidgetState extends State<InvitationWidget>
     with SingleTickerProviderStateMixin {
+  late Store _store;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   bool _isProcessing = false;
@@ -22,6 +23,7 @@ class _InvitationWidgetState extends State<InvitationWidget>
   @override
   void initState() {
     super.initState();
+    _store = context.read<Store>();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -49,11 +51,9 @@ class _InvitationWidgetState extends State<InvitationWidget>
     });
 
     try {
-      final store = context.read<Store>();
-
       // Check if user is already in a lobby
       final isInLobby =
-          store.lobby.id.isNotEmpty && store.lobby.players.isNotEmpty;
+          _store.lobby.id.isNotEmpty && _store.lobby.players.isNotEmpty;
 
       if (isInLobby) {
         // Show confirmation dialog
@@ -88,10 +88,10 @@ class _InvitationWidgetState extends State<InvitationWidget>
       // Cancel all existing lobby subscriptions and clear store lobby data
       if (isInLobby) {
         // Leave the current lobby if user was in one
-        await leaveLobby(lobbyId: store.lobby.id, playerId: store.user.id);
+        await leaveLobby(lobbyId: _store.lobby.id, playerId: _store.user.id);
       }
-      store.cancelLobbySubscription();
-      store.lobby = getEmptyLobby();
+      _store.cancelLobbySubscription();
+      _store.lobby = getEmptyLobby();
 
       // Get the lobby data for the invite
       final lobbyDoc = await Firestore().getDocument(
@@ -118,7 +118,7 @@ class _InvitationWidgetState extends State<InvitationWidget>
 
         // Create player info for current user
         final playerInfo = LobbyPlayerInfo(
-          user: store.user,
+          user: _store.user,
           score: 0,
           round: 0,
           attempts: 0,
@@ -142,9 +142,9 @@ class _InvitationWidgetState extends State<InvitationWidget>
           maxPlayers: lobby.maxPlayers,
           type: lobby.type,
           startTime: lobby.startTime,
-          players: {...lobby.players, store.user.id: playerInfo},
+          players: {...lobby.players, _store.user.id: playerInfo},
         );
-        store.lobby = updatedLobby;
+        _store.lobby = updatedLobby;
 
         // Start lobby subscription to stay connected
         final lobbyStream = await Firestore().subscribeToDocument(
@@ -152,15 +152,15 @@ class _InvitationWidgetState extends State<InvitationWidget>
           documentId: invite.lobbyId,
         );
 
-        store.lobbySubscription = lobbyStream.listen((event) {
+        _store.lobbySubscription = lobbyStream.listen((event) {
           final data = event.data();
           if (data != null) {
-            store.lobby = Lobby.fromJson(data as Map<String, dynamic>);
+            _store.lobby = Lobby.fromJson(data as Map<String, dynamic>);
           }
         });
 
         // Remove from local invites list
-        store.invites.removeWhere((inv) => inv.id == invite.id);
+        _store.invites.removeWhere((inv) => inv.id == invite.id);
 
         // Show success message
         if (mounted) {
@@ -173,7 +173,10 @@ class _InvitationWidgetState extends State<InvitationWidget>
           );
 
           // Navigate to private lobby page
-          Navigator.pushNamed(context, '/privateLobby');
+          Navigator.pushReplacementNamed(
+            context,
+            '/${Routes.privateLobby.name}',
+          );
         }
       } else {
         if (mounted) {
@@ -217,8 +220,7 @@ class _InvitationWidgetState extends State<InvitationWidget>
       await rejectInvite(invite: invite);
 
       // Remove from local invites list
-      final store = context.read<Store>();
-      store.invites.removeWhere((inv) => inv.id == invite.id);
+      _store.invites.removeWhere((inv) => inv.id == invite.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -251,8 +253,8 @@ class _InvitationWidgetState extends State<InvitationWidget>
   @override
   Widget build(BuildContext context) {
     return Consumer<Store>(
-      builder: (context, store, child) {
-        final invites = store.invites;
+      builder: (context, _store, child) {
+        final invites = _store.invites;
 
         if (invites.isEmpty) {
           return const SizedBox.shrink();

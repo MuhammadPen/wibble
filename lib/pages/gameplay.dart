@@ -38,8 +38,23 @@ class _GameplayState extends State<Gameplay> {
   bool _isTimeUp = false;
 
   @override
+  void initState() {
+    super.initState();
+    _initializeGameGrid();
+    _selectWord();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _gameTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final store = context.read<Store>();
+    final store = context.watch<Store>();
     final lobbyData = store.lobby;
 
     return PopScope(
@@ -128,24 +143,9 @@ class _GameplayState extends State<Gameplay> {
     );
   }
 
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _gameTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeGameGrid();
-    _selectWord();
-    _focusNode = FocusNode();
-  }
-
   int _getOpponentScore() {
     final store = context.read<Store>();
-    final lobbyData = context.read<Store>().lobby;
+    final lobbyData = store.lobby;
 
     LobbyPlayerInfo? opponent;
     try {
@@ -162,7 +162,7 @@ class _GameplayState extends State<Gameplay> {
 
   int _getPlayerScore() {
     final store = context.read<Store>();
-    final lobbyData = context.read<Store>().lobby;
+    final lobbyData = store.lobby;
 
     final LobbyPlayerInfo? myPlayer = lobbyData.players[store.user.id];
 
@@ -202,6 +202,7 @@ class _GameplayState extends State<Gameplay> {
 
   /// Handle enter key press to submit the current word
   void _handleEnter() async {
+    final store = context.read<Store>();
     if (!_isCurrentRowFilled || _areAttemptsOver || _isTimeUp) return;
 
     // Add word validation
@@ -257,8 +258,8 @@ class _GameplayState extends State<Gameplay> {
     // update player progress in lobby
     // if the lobby doesnt exist this will just error out. can ignore that
     updatePlayerProgressInLobby(
-      lobbyId: context.read<Store>().lobby.id,
-      playerId: context.read<Store>().user.id,
+      lobbyId: store.lobby.id,
+      playerId: store.user.id,
       score: _getPlayerScore(),
       round: _currentRound,
       attempts: _cursorPosition[0] + 1,
@@ -288,11 +289,11 @@ class _GameplayState extends State<Gameplay> {
   }
 
   void _handleTimeUp() async {
+    final store = context.read<Store>();
     setState(() {
       _areAttemptsOver = true;
     });
 
-    final store = context.read<Store>();
     final lobbyData = store.lobby;
 
     final int myScore = _getPlayerScore();
@@ -313,7 +314,7 @@ class _GameplayState extends State<Gameplay> {
           // reset lobby data
           store.lobby = getEmptyLobby();
           store.cancelLobbySubscription();
-          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+          Navigator.pushReplacementNamed(context, "/${Routes.mainmenu.name}");
         },
       );
     } else if (myScore < opponentScore) {
@@ -326,7 +327,7 @@ class _GameplayState extends State<Gameplay> {
           // reset lobby data
           store.lobby = getEmptyLobby();
           store.cancelLobbySubscription();
-          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+          Navigator.pushReplacementNamed(context, "/${Routes.mainmenu.name}");
         },
       );
     } else {
@@ -339,7 +340,7 @@ class _GameplayState extends State<Gameplay> {
           // reset lobby data
           store.lobby = getEmptyLobby();
           store.cancelLobbySubscription();
-          Navigator.pushNamed(context, "/${Routes.mainmenu.name}");
+          Navigator.pushReplacementNamed(context, "/${Routes.mainmenu.name}");
         },
       );
     }
@@ -349,9 +350,9 @@ class _GameplayState extends State<Gameplay> {
 
   /// Initialize the game grid based on lobby settings
   void _initializeGameGrid() {
-    final appStore = context.read<Store>();
-    final wordLength = appStore.lobby.wordLength;
-    final maxAttempts = appStore.lobby.maxAttempts;
+    final store = context.read<Store>();
+    final wordLength = store.lobby.wordLength;
+    final maxAttempts = store.lobby.maxAttempts;
 
     _guessGrid = List.generate(
       maxAttempts,
