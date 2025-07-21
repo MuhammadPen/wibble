@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:wibble/components/lobby_status.dart';
-import 'package:wibble/components/invite_user_form.dart';
+import 'package:wibble/components/widgets/lobby_status.dart';
+import 'package:wibble/components/widgets/invite_user_form.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/firebase/firestore/index.dart';
 import 'package:wibble/main.dart';

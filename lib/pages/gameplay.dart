@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:wibble/components/countdown.dart';
-import 'package:wibble/components/dialog.dart';
-import 'package:wibble/components/game_status.dart';
-import 'package:wibble/components/keyboard_widget.dart';
-import 'package:wibble/components/word_grid.dart';
+import 'package:wibble/components/ui/countdown.dart';
+import 'package:wibble/components/ui/dialog.dart';
+import 'package:wibble/components/widgets/game_status.dart';
+import 'package:wibble/components/widgets/keyboard_widget.dart';
+import 'package:wibble/components/widgets/word_grid.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/types.dart';

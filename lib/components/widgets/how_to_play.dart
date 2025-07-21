@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wibble/components/dialog.dart';
+import 'package:wibble/components/ui/dialog.dart';
 import 'package:wibble/types.dart';
 
 class HowToPlayDialog {

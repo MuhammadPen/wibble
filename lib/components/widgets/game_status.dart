@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wibble/components/clock.dart';
+import 'package:wibble/components/ui/clock.dart';
 import 'package:wibble/types.dart';
 
 class GameStatus extends StatelessWidget {

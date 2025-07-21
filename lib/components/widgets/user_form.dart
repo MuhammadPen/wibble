@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 class UserFormDialog extends StatefulWidget {
   final Function(String username)? onSubmit;
+  final bool dismissible;
 
-  const UserFormDialog({Key? key, this.onSubmit}) : super(key: key);
+  const UserFormDialog({Key? key, this.onSubmit, this.dismissible = false})
+    : super(key: key);
 
   @override
   State<UserFormDialog> createState() => _UserFormDialogState();
@@ -12,12 +14,13 @@ class UserFormDialog extends StatefulWidget {
   static Future<String?> show(
     BuildContext context, {
     Function(String username)? onSubmit,
+    bool dismissible = false,
   }) {
     return showDialog<String>(
       context: context,
-      barrierDismissible: false, // Prevents dismissal by tapping outside
+      barrierDismissible: dismissible, // Uses the dismissible parameter
       builder: (BuildContext context) {
-        return UserFormDialog(onSubmit: onSubmit);
+        return UserFormDialog(onSubmit: onSubmit, dismissible: dismissible);
       },
     );
   }
@@ -31,7 +34,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // Prevents back button dismissal
+      canPop: widget.dismissible, // Uses the dismissible parameter
       child: AlertDialog(
         title: const Text('Enter Your Information'),
         content: Form(

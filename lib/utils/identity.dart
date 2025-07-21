@@ -5,7 +5,7 @@ import 'package:fpjs_pro_plugin/error.dart';
 import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import 'package:wibble/components/user_form.dart';
+import 'package:wibble/components/widgets/user_form.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/types.dart';
 

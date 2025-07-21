@@ -29,6 +29,37 @@ Future<String> createUser({required User user}) async {
   return user.id;
 }
 
+Future<bool> updateUser({required User user}) async {
+  try {
+    await Firestore().updateDocument(
+      collectionId: FirestoreCollections.users.name,
+      documentId: user.id,
+      data: user.toJson(),
+    );
+    return true;
+  } catch (e) {
+    print(e);
+    return false;
+  }
+}
+
+Future<bool> updateUsername({
+  required String userId,
+  required String username,
+}) async {
+  try {
+    await Firestore().updateDocument(
+      collectionId: FirestoreCollections.users.name,
+      documentId: userId,
+      data: {'username': username},
+    );
+    return true;
+  } catch (e) {
+    print(e);
+    return false;
+  }
+}
+
 Future<QuerySnapshot<Map<String, dynamic>>?> getLobbyByPlayerId({
   required String playerId,
 }) async {
@@ -120,7 +151,11 @@ Future<Lobby?> getLobby({required String lobbyId}) async {
     collectionId: FirestoreCollections.multiplayer.name,
     documentId: lobbyId,
   );
-  return Lobby.fromJson(doc.data() as Map<String, dynamic>);
+  if (doc.exists && doc.data() != null) {
+    return Lobby.fromJson(doc.data() as Map<String, dynamic>);
+  } else {
+    return null;
+  }
 }
 
 Future<void> leaveLobby({

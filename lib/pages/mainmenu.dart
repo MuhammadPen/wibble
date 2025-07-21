@@ -9,8 +9,11 @@ import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:fpjs_pro_plugin/region.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wibble/components/how_to_play.dart';
-import 'package:wibble/components/user_card.dart';
+import 'package:wibble/components/ui/button.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
+import 'package:wibble/components/widgets/how_to_play.dart';
+import 'package:wibble/components/widgets/title_card.dart';
+import 'package:wibble/components/widgets/user_card.dart';
 import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
@@ -105,66 +108,56 @@ class _MainmenuState extends State<Mainmenu> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Welcome message
-                  if (store.user.username.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 30),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Welcome ',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.blue,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          UserCard(user: store.user),
-                        ],
+                  TitleCard(user: store.user),
+                  SizedBox(height: 20),
+                  //-----menu buttons-----
+                  //-----1v1, 5v5-----
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 20,
+                    children: [
+                      CustomButton(
+                        onPressed: store.user.id.isEmpty
+                            ? null
+                            : () async {
+                                try {
+                                  await store.searchForGame(
+                                    type: LobbyType.oneVOne,
+                                  );
+                                } catch (e, stackTrace) {
+                                  print('Error in matchmaking: $e');
+                                  print('Stack trace: $stackTrace');
+                                }
+                              },
+                        text: "1v1",
+                        width: 175,
+                        disabled: store.user.id.isEmpty,
+                        backgroundColor: Color(0xffFFC700),
                       ),
-                    ),
-                  SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.person),
-                    label: Text("1v1"),
-                    onPressed: store.user.id.isEmpty
-                        ? null
-                        : () async {
-                            try {
-                              print('Starting 1v1 matchmaking...');
-                              await store.searchForGame(
-                                type: LobbyType.oneVOne,
-                              );
-                            } catch (e, stackTrace) {
-                              print('Error in matchmaking: $e');
-                              print('Stack trace: $stackTrace');
-                            }
-                          },
-                    style: buttonStyle,
+                      CustomButton(
+                        onPressed: store.user.id.isEmpty
+                            ? null
+                            : () async {
+                                try {
+                                  print('Starting 5v5 matchmaking...');
+                                  await store.searchForGame(
+                                    type: LobbyType.custom,
+                                  );
+                                } catch (e, stackTrace) {
+                                  print('Error in matchmaking: $e');
+                                  print('Stack trace: $stackTrace');
+                                }
+                              },
+                        text: "5v5",
+                        width: 175,
+                        disabled: store.user.id.isEmpty,
+                        backgroundColor: Color(0xff10A958),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.person),
-                    label: Text("5v5"),
-                    onPressed: store.user.id.isEmpty
-                        ? null
-                        : () async {
-                            try {
-                              print('Starting 5v5 matchmaking...');
-                              await store.searchForGame(type: LobbyType.custom);
-                            } catch (e, stackTrace) {
-                              print('Error in matchmaking: $e');
-                              print('Stack trace: $stackTrace');
-                            }
-                          },
-                    style: buttonStyle,
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.person),
-                    label: Text("Private lobby"),
+                  SizedBox(height: 20),
+                  //-----private lobby-----
+                  CustomButton(
                     onPressed: () async {
                       await store.createPrivateLobby();
                       Navigator.pushReplacementNamed(
@@ -172,27 +165,38 @@ class _MainmenuState extends State<Mainmenu> {
                         "/${Routes.privateLobby.name}",
                       );
                     },
-                    style: buttonStyle,
+                    text: "Private lobby",
+                    backgroundColor: Color(0xffFF7300),
+                    width: 370,
+                    fontSize: 48,
+                    disabled: store.user.id.isEmpty,
                   ),
-                  SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.help),
-                    label: Text("How to play"),
-                    onPressed: () {
-                      HowToPlayDialog.show(context);
-                    },
-                    style: buttonStyle,
+                  SizedBox(height: 20),
+                  //-----how to play, exit-----
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 20,
+                    children: [
+                      CustomButton(
+                        onPressed: () {
+                          HowToPlayDialog.show(context);
+                        },
+                        text: "How to play",
+                        width: 175,
+                        backgroundColor: Color(0xff0099FF),
+                        fontSize: 32,
+                      ),
+                      if (!kIsWeb)
+                        CustomButton(
+                          onPressed: () {
+                            exit(0);
+                          },
+                          text: "Exit",
+                          width: 175,
+                          backgroundColor: Color(0xffFF0000),
+                        ),
+                    ],
                   ),
-                  SizedBox(height: 10),
-                  if (!kIsWeb)
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.exit_to_app),
-                      label: Text("Exit"),
-                      onPressed: () {
-                        exit(0);
-                      },
-                      style: buttonStyle,
-                    ),
                 ],
               ),
       ),

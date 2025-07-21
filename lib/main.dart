@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wibble/components/invitation.dart';
+import 'package:wibble/components/widgets/invitation.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/pages/gameplay.dart';
 import 'package:wibble/pages/mainmenu.dart';
@@ -47,6 +47,7 @@ class _MyAppContentState extends State<MyAppContent> {
       title: 'Wibble',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        scaffoldBackgroundColor: Color(0xffF2EEDB),
       ),
       home: Stack(children: [Mainmenu(), const InvitationWidget()]),
       routes: {

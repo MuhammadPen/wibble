@@ -113,11 +113,11 @@ class LobbyPlayerInfo {
 @JsonSerializable(explicitToJson: true)
 class User {
   final String id;
-  final String username;
+  String username;
   final Rank rank;
   final DateTime createdAt;
 
-  const User({
+  User({
     required this.id,
     required this.username,
     required this.rank,
