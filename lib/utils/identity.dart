@@ -31,7 +31,7 @@ Future<User?> identifyUser({required BuildContext context}) async {
       //cache user
       await prefs.setString(UserCacheKeys.user.name, jsonEncode(user.toJson()));
     } else {
-      final username = await UserFormDialog.show(context);
+      final username = await UserFormDialog.show(context, dismissible: false);
 
       user = User(
         id: visitorId ?? Uuid().v4(),

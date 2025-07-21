@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:wibble/components/ui/button.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
 
 class UserFormDialog extends StatefulWidget {
   final Function(String username)? onSubmit;
@@ -36,30 +38,61 @@ class _UserFormDialogState extends State<UserFormDialog> {
     return PopScope(
       canPop: widget.dismissible, // Uses the dismissible parameter
       child: AlertDialog(
-        title: const Text('Enter Your Information'),
-        content: Form(
-          key: _formKey,
+        backgroundColor: Colors.transparent,
+        content: ShadowContainer(
+          backgroundColor: Color(0xffF2EEDB),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            spacing: 10,
             children: [
-              // Username field
-              _buildUsernameField(),
-
-              // Space for future fields can be added here easily
-              // Example: _buildEmailField(),
-              // Example: _buildAgeField(),
+              Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [_buildUsernameField()],
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  if (widget.dismissible)
+                    CustomButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      text: "Cancle",
+                      fontSize: 32,
+                      width: 140,
+                      backgroundColor: Color(0xffFF2727),
+                    ),
+                  CustomButton(
+                    onPressed: _isSubmitEnabled ? _handleSubmit : null,
+                    text: "Submit",
+                    fontSize: 32,
+                    width: 140,
+                    backgroundColor: Color(0xff10A958),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
-        actions: [
-          ElevatedButton(
-            onPressed: _isSubmitEnabled ? _handleSubmit : null,
-            child: const Text('Submit'),
-          ),
-        ],
       ),
     );
   }
+
+  //   Text(
+  //   'Enter Your Information',
+  //   style: TextStyle(
+  //     color: Colors.white,
+  //     fontSize: 24,
+  //     fontFamily: "Baloo",
+  //   ),
+  // ),
+
+  // ElevatedButton(
+  //           onPressed: _isSubmitEnabled ? _handleSubmit : null,
+  //           child: const Text('Submit'),
+  //         ),
 
   @override
   void dispose() {
@@ -78,11 +111,10 @@ class _UserFormDialogState extends State<UserFormDialog> {
     return TextFormField(
       controller: _usernameController,
       autofocus: true,
-      decoration: const InputDecoration(
-        labelText: 'Username',
-        hintText: 'Enter your username',
-        border: OutlineInputBorder(),
+      decoration: InputDecoration(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
+      style: TextStyle(color: Colors.black, fontSize: 32, fontFamily: "Baloo"),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return 'Username is required';

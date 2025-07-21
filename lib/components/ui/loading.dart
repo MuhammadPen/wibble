@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class Loading extends StatefulWidget {
-  const Loading({super.key});
+  final Color color;
+  const Loading({super.key, this.color = Colors.white});
 
   @override
   State<Loading> createState() => _LoadingWidgetState();
@@ -32,7 +33,7 @@ class _LoadingWidgetState extends State<Loading>
       height: 12,
       margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: isVisible ? Colors.white : Colors.transparent,
+        color: isVisible ? widget.color : Colors.transparent,
         shape: BoxShape.circle,
       ),
     );

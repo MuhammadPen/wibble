@@ -18,47 +18,57 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      spacing: 10,
-      children: [
-        CustomButton(
-          onPressed: () => _handleEdit(context),
-          height: 60,
-          width: 70,
-          backgroundColor: Color(0xffF2EEDB),
-          borderColor: Colors.transparent,
-          shadowColor: Color.fromARGB(91, 242, 238, 219),
-          child: Icon(Icons.edit),
-        ),
-        CustomButton(
-          onPressed: () => _handleCopy(context),
-          height: 60,
-          backgroundColor: Color(0xffF2EEDB),
-          borderColor: Colors.transparent,
-          shadowColor: Color.fromARGB(91, 242, 238, 219),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 10,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(left: 30, right: 1),
-                child: Text(
-                  user.username.length > 9
-                      ? "${user.username.substring(0, 9)}..."
-                      : user.username,
-                  style: TextStyle(fontSize: 32, fontFamily: "Baloo"),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(right: 10),
-                child: Icon(Icons.copy),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(maxWidth: 332),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 10,
+        children: [
+          CustomButton(
+            onPressed: () => _handleEdit(context),
+            height: 60,
+            width: 70,
+            backgroundColor: Color(0xffF2EEDB),
+            borderColor: Colors.transparent,
+            shadowColor: Color.fromARGB(91, 242, 238, 219),
+            loadingColor: Colors.black,
+            child: Icon(Icons.edit),
           ),
-        ),
-      ],
+          Flexible(
+            child: CustomButton(
+              onPressed: () => _handleCopy(context),
+              height: 60,
+              backgroundColor: Color(0xffF2EEDB),
+              borderColor: Colors.transparent,
+              shadowColor: Color.fromARGB(91, 242, 238, 219),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 10,
+                children: [
+                  Flexible(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 30, right: 1),
+                      child: Text(
+                        user.username.length > 10
+                            ? "${user.username.substring(0, 10)}..."
+                            : user.username,
+                        style: TextStyle(fontSize: 32, fontFamily: "Baloo"),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: 10),
+                    child: Icon(Icons.copy),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

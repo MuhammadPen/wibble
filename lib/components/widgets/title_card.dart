@@ -22,7 +22,7 @@ class TitleCard extends StatelessWidget {
                 "W____",
                 style: TextStyle(
                   fontFamily: "Bungee",
-                  fontSize: 52,
+                  fontSize: 58,
                   color: Color(0xffFFC700),
                 ),
               ),
@@ -30,7 +30,7 @@ class TitleCard extends StatelessWidget {
                 "_I___",
                 style: TextStyle(
                   fontFamily: "Bungee",
-                  fontSize: 52,
+                  fontSize: 58,
                   color: Color(0xff32CC7A),
                 ),
               ),
@@ -38,7 +38,7 @@ class TitleCard extends StatelessWidget {
                 "__B__",
                 style: TextStyle(
                   fontFamily: "Bungee",
-                  fontSize: 52,
+                  fontSize: 58,
                   color: Color(0xff0099FF),
                 ),
               ),
@@ -46,7 +46,7 @@ class TitleCard extends StatelessWidget {
                 "___L_",
                 style: TextStyle(
                   fontFamily: "Bungee",
-                  fontSize: 52,
+                  fontSize: 58,
                   color: Color(0xffFF7300),
                 ),
               ),
@@ -54,7 +54,7 @@ class TitleCard extends StatelessWidget {
                 "____E",
                 style: TextStyle(
                   fontFamily: "Bungee",
-                  fontSize: 52,
+                  fontSize: 58,
                   color: Color(0xffFF0000),
                 ),
               ),

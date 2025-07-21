@@ -193,7 +193,7 @@ class _MainmenuState extends State<Mainmenu> {
                           },
                           text: "Exit",
                           width: 175,
-                          backgroundColor: Color(0xffFF0000),
+                          backgroundColor: Color(0xffFF2727),
                         ),
                     ],
                   ),
