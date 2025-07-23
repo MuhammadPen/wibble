@@ -64,6 +64,7 @@ class _InvitationWidgetState extends State<InvitationWidget>
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 0),
             content: ShadowContainer(
               backgroundColor: Color(0xffF2EEDB),
               child: Column(

@@ -31,66 +31,76 @@ class LobbyStatus extends StatelessWidget {
             ),
             child: SingleChildScrollView(
               child: Column(
-                children: lobby.players.entries.map((entry) {
-                  final playerId = entry.key;
-                  final playerInfo = entry.value;
-                  final isCurrentUser = playerId == currentUserId;
+                children:
+                    (lobby.players.entries.toList()..sort((a, b) {
+                          // Current user first, then others
+                          if (a.key == currentUserId) return -1;
+                          if (b.key == currentUserId) return 1;
+                          return 0;
+                        }))
+                        .map((entry) {
+                          final playerId = entry.key;
+                          final playerInfo = entry.value;
+                          final isCurrentUser = playerId == currentUserId;
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              // User indicator
-                              if (isCurrentUser)
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xff10A958),
-                                    shape: BoxShape.circle,
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      // User indicator
+                                      if (isCurrentUser)
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: Color(0xff10A958),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      const SizedBox(width: 8),
+                                      // Username
+                                      Expanded(
+                                        child: Text(
+                                          isCurrentUser
+                                              ? "You (${playerInfo.user.username})"
+                                              : playerInfo.user.username,
+                                          style: textStyle.copyWith(
+                                            fontSize: 18,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              const SizedBox(width: 8),
-                              // Username
-                              Expanded(
-                                child: Text(
-                                  isCurrentUser
-                                      ? "You (${playerInfo.user.username})"
-                                      : playerInfo.user.username,
-                                  style: textStyle.copyWith(fontSize: 18),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // // Rank badge
-                        // Container(
-                        //   padding: const EdgeInsets.symmetric(
-                        //     horizontal: 8,
-                        //     vertical: 2,
-                        //   ),
-                        //   decoration: BoxDecoration(
-                        //     color: _getRankColor(playerInfo.user.rank),
-                        //     borderRadius: BorderRadius.circular(12),
-                        //   ),
-                        //   child: Text(
-                        //     _getRankDisplayName(playerInfo.user.rank),
-                        //     style: const TextStyle(
-                        //       fontSize: 12,
-                        //       fontWeight: FontWeight.w600,
-                        //       color: Colors.white,
-                        //     ),
-                        //   ),
-                        // ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                                // // Rank badge
+                                // Container(
+                                //   padding: const EdgeInsets.symmetric(
+                                //     horizontal: 8,
+                                //     vertical: 2,
+                                //   ),
+                                //   decoration: BoxDecoration(
+                                //     color: _getRankColor(playerInfo.user.rank),
+                                //     borderRadius: BorderRadius.circular(12),
+                                //   ),
+                                //   child: Text(
+                                //     _getRankDisplayName(playerInfo.user.rank),
+                                //     style: const TextStyle(
+                                //       fontSize: 12,
+                                //       fontWeight: FontWeight.w600,
+                                //       color: Colors.white,
+                                //     ),
+                                //   ),
+                                // ),
+                              ],
+                            ),
+                          );
+                        })
+                        .toList(),
               ),
             ),
           ),

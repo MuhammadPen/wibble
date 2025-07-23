@@ -12,11 +12,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wibble/components/ui/button.dart';
 import 'package:wibble/components/ui/loading.dart';
 import 'package:wibble/components/ui/shadow_container.dart';
+import 'package:wibble/components/widgets/gameover_card.dart';
 import 'package:wibble/components/widgets/how_to_play.dart';
 import 'package:wibble/components/widgets/title_card.dart';
 import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
+import 'package:wibble/mock/lobby.dart';
 import 'package:wibble/styles/text.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/identity.dart';
@@ -59,7 +61,7 @@ class _MainmenuState extends State<Mainmenu> {
     final isMatchmaking = store.isMatchmaking;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_hasCheckedResumeMatch) {
+      if (!_hasCheckedResumeMatch && store.user.id.isNotEmpty) {
         setState(() {
           _hasCheckedResumeMatch = true;
         });
@@ -224,41 +226,65 @@ class _MainmenuState extends State<Mainmenu> {
   void _onStoreChanged() async {
     // fetch the store again to get updated values
     final store = context.read<Store>();
-    final prefs = await SharedPreferences.getInstance();
-    final cachedUser = prefs.getString(UserCacheKeys.user.name);
+
+    print(
+      '🔄 _onStoreChanged called - lobby.id: ${store.lobby.id}, user.id: ${store.user.id}',
+    );
+
+    // Check if we need to resume match now that user is loaded
+    if (!_hasCheckedResumeMatch && store.user.id.isNotEmpty) {
+      setState(() {
+        _hasCheckedResumeMatch = true;
+      });
+      print('🎯 User loaded, now calling resumeMatch');
+      store.resumeMatch();
+      return; // Return early to let resumeMatch trigger the next _onStoreChanged
+    }
 
     // Only check lobby status if we have a valid lobby with an ID
     if (store.lobby.id.isNotEmpty) {
-      if (cachedUser == null) {
+      if (store.user.id.isEmpty) {
+        print('❌ User ID is empty, returning early');
         return;
       }
       if (store.lobby.players.isEmpty) {
+        print('❌ Lobby players is empty, returning early');
         return;
       }
+
+      print(
+        '✅ Lobby found - type: ${store.lobby.type.name}, startTime: ${store.lobby.startTime}, playerCount: ${store.lobby.playerCount}, maxPlayers: ${store.lobby.maxPlayers}',
+      );
 
       // If on a private lobby and the game has not started, take me to the private lobby page
       if (store.lobby.type == LobbyType.private &&
           store.lobby.startTime == null) {
+        print('🏠 Navigating to private lobby page');
         Navigator.pushReplacementNamed(context, "/${Routes.privateLobby.name}");
         return;
       }
 
       // Check if lobby is full
       final isLobbyFull = store.lobby.playerCount >= store.lobby.maxPlayers;
+      final isPlayerInLobby = store.lobby.players.containsKey(store.user.id);
+
+      print(
+        '🔍 isLobbyFull: $isLobbyFull, isPlayerInLobby: $isPlayerInLobby, _hasNavigated: $_hasNavigated',
+      );
+
       if (isLobbyFull && !_hasNavigated) {
         _hasNavigated = true;
         store.isMatchmaking = false;
+        print('🎮 Navigating to gameplay page');
         Navigator.pushReplacementNamed(context, "/${Routes.gameplay.name}");
         return;
       }
 
       // If user is in lobby but lobby is not full, show matchmaking state
-      final isPlayerInLobby = store.lobby.players.containsKey(
-        User.fromJson(jsonDecode(cachedUser)).id,
-      );
       if (isPlayerInLobby && !isLobbyFull && !_hasNavigated) {
         // Only set matchmaking to true if it's not already true (prevent infinite loop)
         if (!store.isMatchmaking) {
+          print('⏳ Setting matchmaking to true');
           store.isMatchmaking = true;
         }
       }

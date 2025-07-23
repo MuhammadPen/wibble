@@ -146,6 +146,17 @@ Future<void> joinLobby({
   );
 }
 
+Future<void> deleteLobby({required String lobbyId}) async {
+  try {
+    await Firestore().deleteDocument(
+      collectionId: FirestoreCollections.multiplayer.name,
+      documentId: lobbyId,
+    );
+  } catch (e) {
+    print(e);
+  }
+}
+
 Future<Lobby?> getLobby({required String lobbyId}) async {
   final doc = await Firestore().getDocument(
     collectionId: FirestoreCollections.multiplayer.name,

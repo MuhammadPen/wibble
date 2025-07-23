@@ -52,55 +52,80 @@ class _PrivateLobbyState extends State<PrivateLobby> {
         children: [
           SizedBox(height: 50),
           LobbyStatus(lobby: lobby, currentUserId: store.user.id),
-          Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 370),
-              child: InviteUserForm(
-                onInvite: (userId) async {
-                  final doesUserExist = await Firestore().doesDocumentExist(
-                    collectionId: FirestoreCollections.users.name,
-                    documentId: userId,
-                  );
+          if (isAdmin)
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 370),
+                child: InviteUserForm(
+                  onInvite: (userId) async {
+                    // Check if user is trying to invite themselves
+                    if (userId == store.user.id) {
+                      setState(() {
+                        _showUserDoesNotExist = true;
+                      });
+                      // after 3 seconds set it to false
+                      Future.delayed(const Duration(seconds: 3), () {
+                        if (mounted) {
+                          setState(() {
+                            _showUserDoesNotExist = false;
+                          });
+                        }
+                      });
+                      return;
+                    }
 
-                  if (!doesUserExist) {
+                    final doesUserExist = await Firestore().doesDocumentExist(
+                      collectionId: FirestoreCollections.users.name,
+                      documentId: userId,
+                    );
+
+                    if (!doesUserExist) {
+                      setState(() {
+                        _showUserDoesNotExist = true;
+                      });
+                      // after 3 seconds set it to false
+                      Future.delayed(const Duration(seconds: 3), () {
+                        if (mounted) {
+                          setState(() {
+                            _showUserDoesNotExist = false;
+                          });
+                        }
+                      });
+                      return;
+                    }
+
+                    final inviteToSend = Invite(
+                      id: Uuid().v4(),
+                      lobbyId: lobby.id,
+                      sender: store.user,
+                      receiverId: userId,
+                      createdAt: DateTime.now(),
+                    );
+
+                    await invitePlayer(invite: inviteToSend);
                     setState(() {
-                      _showUserDoesNotExist = true;
+                      _showInviteSent = true;
                     });
                     // after 3 seconds set it to false
                     Future.delayed(const Duration(seconds: 3), () {
                       if (mounted) {
                         setState(() {
-                          _showUserDoesNotExist = false;
+                          _showInviteSent = false;
                         });
                       }
                     });
-                    return;
-                  }
-
-                  final inviteToSend = Invite(
-                    id: Uuid().v4(),
-                    lobbyId: lobby.id,
-                    sender: store.user,
-                    receiverId: userId,
-                    createdAt: DateTime.now(),
-                  );
-
-                  await invitePlayer(invite: inviteToSend);
-                  setState(() {
-                    _showInviteSent = true;
-                  });
-                  // after 3 seconds set it to false
-                  Future.delayed(const Duration(seconds: 3), () {
-                    if (mounted) {
-                      setState(() {
-                        _showInviteSent = false;
-                      });
-                    }
-                  });
-                },
+                  },
+                ),
               ),
             ),
-          ),
+          if (!isAdmin)
+            Center(
+              child: Text(
+                "Setting up game...",
+                style: textStyle.copyWith(fontSize: 24),
+                textAlign: TextAlign.center,
+              ),
+            ),
           if (_showUserDoesNotExist)
             Text(
               "User does not exist",
@@ -114,11 +139,11 @@ class _PrivateLobbyState extends State<PrivateLobby> {
               textAlign: TextAlign.center,
             ),
           SizedBox(height: 20),
-          if (isAdmin)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 10,
-              children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
+            children: [
+              if (isAdmin)
                 CustomButton(
                   onPressed: () async {
                     // Set the lobby start time in Firestore
@@ -133,43 +158,43 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                   width: 175,
                   fontSize: 32,
                 ),
-                if (isAdmin)
-                  CustomButton(
-                    onPressed: () async {
-                      await cancelPrivateLobby(lobbyId: lobby.id);
-                      store.lobby = getEmptyLobby();
-                      store.cancelLobbySubscription();
-                      Navigator.pushReplacementNamed(
-                        context,
-                        "/${Routes.mainmenu.name}",
-                      );
-                    },
-                    text: "Cancel",
-                    backgroundColor: Color(0xffFF2727),
-                    width: 175,
-                    fontSize: 32,
-                  ),
-                if (!isAdmin)
-                  CustomButton(
-                    onPressed: () async {
-                      await leaveLobby(
-                        lobbyId: lobby.id,
-                        playerId: store.user.id,
-                      );
-                      store.lobby = getEmptyLobby();
-                      store.cancelLobbySubscription();
-                      Navigator.pushReplacementNamed(
-                        context,
-                        "/${Routes.mainmenu.name}",
-                      );
-                    },
-                    text: "Leave",
-                    backgroundColor: Color(0xffFF2727),
-                    width: 175,
-                    fontSize: 32,
-                  ),
-              ],
-            ),
+              if (isAdmin)
+                CustomButton(
+                  onPressed: () async {
+                    await cancelPrivateLobby(lobbyId: lobby.id);
+                    store.lobby = getEmptyLobby();
+                    store.cancelLobbySubscription();
+                    Navigator.pushReplacementNamed(
+                      context,
+                      "/${Routes.mainmenu.name}",
+                    );
+                  },
+                  text: "Cancel",
+                  backgroundColor: Color(0xffFF2727),
+                  width: 175,
+                  fontSize: 32,
+                ),
+              if (!isAdmin)
+                CustomButton(
+                  onPressed: () async {
+                    await leaveLobby(
+                      lobbyId: lobby.id,
+                      playerId: store.user.id,
+                    );
+                    store.lobby = getEmptyLobby();
+                    store.cancelLobbySubscription();
+                    Navigator.pushReplacementNamed(
+                      context,
+                      "/${Routes.mainmenu.name}",
+                    );
+                  },
+                  text: "Leave",
+                  backgroundColor: Color(0xffFF2727),
+                  width: 175,
+                  fontSize: 32,
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -180,7 +205,6 @@ class _PrivateLobbyState extends State<PrivateLobby> {
     final store = context.read<Store>();
     //get current route
     final currentRoute = ModalRoute.of(context)?.settings.name;
-    print("🔴 currentRoute: $currentRoute");
     if (currentRoute == "/${Routes.privateLobby.name}") {
       return;
     }

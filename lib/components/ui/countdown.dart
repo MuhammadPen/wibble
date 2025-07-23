@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
+import 'package:wibble/styles/text.dart';
 
 class CountdownWidget extends StatefulWidget {
   final int durationInSeconds;
@@ -16,15 +18,10 @@ class CountdownWidget extends StatefulWidget {
   State<CountdownWidget> createState() => _CountdownWidgetState();
 }
 
-class _CountdownWidgetState extends State<CountdownWidget>
-    with TickerProviderStateMixin {
+class _CountdownWidgetState extends State<CountdownWidget> {
   late int _remainingSeconds;
   Timer? _timer;
   bool _isVisible = true;
-  late AnimationController _scaleController;
-  late AnimationController _pulseController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _pulseAnimation;
 
   @override
   Widget build(BuildContext context) {
@@ -32,66 +29,30 @@ class _CountdownWidgetState extends State<CountdownWidget>
       return const SizedBox.shrink();
     }
 
-    return AnimatedBuilder(
-      animation: Listenable.merge([_scaleAnimation, _pulseAnimation]),
-      builder: (context, child) {
-        return Transform.scale(
-          scale:
-              _scaleAnimation.value *
-              (_remainingSeconds <= 10 ? _pulseAnimation.value : 1.0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: _getCountdownColor().withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _getCountdownColor(), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: _getCountdownColor().withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(0, -0.5),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutBack,
-                        ),
-                      ),
-                  child: FadeTransition(opacity: animation, child: child),
-                );
-              },
-              child: Text(
-                '$_remainingSeconds',
-                key: ValueKey<int>(_remainingSeconds),
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: _getCountdownColor(),
-                  letterSpacing: 2,
-                ),
-              ),
-            ),
+    return ShadowContainer(
+      backgroundColor: Color(0xffF2EEDB),
+      outlineColor: _getCountdownColor(),
+      shadowColor: _getCountdownColor(),
+      padding: 20,
+      child: SizedBox(
+        width: 80,
+        child: Text(
+          '$_remainingSeconds',
+          textAlign: TextAlign.center,
+          style: textStyle.copyWith(
+            fontSize: 64,
+            fontWeight: FontWeight.bold,
+            color: _getCountdownColor(),
+            height: 1.0,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _scaleController.dispose();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -99,26 +60,6 @@ class _CountdownWidgetState extends State<CountdownWidget>
   void initState() {
     super.initState();
     _remainingSeconds = widget.durationInSeconds;
-
-    // Initialize animation controllers
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     _startCountdown();
   }
 
@@ -126,41 +67,36 @@ class _CountdownWidgetState extends State<CountdownWidget>
     // Calculate progress as a value between 0 (time up) and 1 (full time)
     double progress = _remainingSeconds / widget.durationInSeconds;
 
-    if (progress > 0.5) {
-      // Red to orange transition (high time remaining)
-      return Color.lerp(Colors.orange, Colors.red, (progress - 0.5) * 2)!;
-    } else if (progress > 0.2) {
-      // Orange to yellow transition (medium time remaining)
+    if (progress > 0.6) {
+      // High time remaining - Red
+      return Color(0xffFF2727);
+    } else if (progress > 0.4) {
+      // Medium-high time remaining - transition from red to orange
       return Color.lerp(
-        Colors.yellow.shade700,
-        Colors.orange,
-        (progress - 0.2) * 2.5,
+        Color(0xffFF7300),
+        Color(0xffFF2727),
+        (progress - 0.4) * 5,
+      )!;
+    } else if (progress > 0.2) {
+      // Medium-low time remaining - transition from orange to yellow
+      return Color.lerp(
+        Color(0xffFFC700),
+        Color(0xffFF7300),
+        (progress - 0.2) * 5,
       )!;
     } else {
-      // Yellow to green transition (low time remaining - closer to zero)
-      return Color.lerp(Colors.green, Colors.yellow.shade700, progress * 5)!;
+      // Low time remaining - transition from yellow to green
+      return Color.lerp(Color(0xff10A958), Color(0xffFFC700), progress * 5)!;
     }
   }
 
   void _startCountdown() {
-    _scaleController.forward();
-
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         if (_remainingSeconds > 0) {
           _remainingSeconds--;
-          // Trigger scale animation for each second change
-          _scaleController.reset();
-          _scaleController.forward();
-
-          // Add pulse effect when time is running low
-          if (_remainingSeconds <= 10) {
-            _pulseController.repeat(reverse: true);
-          }
         } else {
           _timer?.cancel();
-          _scaleController.stop();
-          _pulseController.stop();
           widget.onCountdownComplete();
           _isVisible = false;
         }

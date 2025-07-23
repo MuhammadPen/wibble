@@ -39,6 +39,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
       canPop: widget.dismissible, // Uses the dismissible parameter
       child: AlertDialog(
         backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(horizontal: 0),
+
         content: ShadowContainer(
           backgroundColor: Color(0xffF2EEDB),
           child: Column(
