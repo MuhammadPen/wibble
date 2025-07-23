@@ -68,9 +68,11 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                     });
                     // after 3 seconds set it to false
                     Future.delayed(const Duration(seconds: 3), () {
-                      setState(() {
-                        _showUserDoesNotExist = false;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _showUserDoesNotExist = false;
+                        });
+                      }
                     });
                     return;
                   }
@@ -89,9 +91,11 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                   });
                   // after 3 seconds set it to false
                   Future.delayed(const Duration(seconds: 3), () {
-                    setState(() {
-                      _showInviteSent = false;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _showInviteSent = false;
+                      });
+                    }
                   });
                 },
               ),
@@ -106,7 +110,7 @@ class _PrivateLobbyState extends State<PrivateLobby> {
           if (_showInviteSent)
             Text(
               "Invite sent",
-              style: TextStyle(color: Colors.green),
+              style: textStyle.copyWith(color: Color(0xff10A958)),
               textAlign: TextAlign.center,
             ),
           SizedBox(height: 20),

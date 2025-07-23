@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wibble/components/ui/button.dart';
 import 'package:wibble/components/ui/loading.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
 import 'package:wibble/components/widgets/how_to_play.dart';
 import 'package:wibble/components/widgets/title_card.dart';
 import 'package:wibble/env/env.dart';

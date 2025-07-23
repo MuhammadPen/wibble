@@ -8,6 +8,8 @@ class CustomButton extends StatefulWidget {
   final bool? disabled;
   final int? height;
   final int? width;
+  final double? horizontalPadding;
+  final double? verticalPadding;
   final double? fontSize;
   final double? borderRadius;
   final Color? fontColor;
@@ -27,6 +29,8 @@ class CustomButton extends StatefulWidget {
     this.disabled,
     this.height,
     this.width,
+    this.horizontalPadding,
+    this.verticalPadding,
     this.fontSize = 52,
     this.borderRadius = 16,
     this.fontColor = Colors.white,
@@ -70,7 +74,10 @@ class _CustomButtonState extends State<CustomButton> {
         width: widget.width?.toDouble(),
         height: widget.height?.toDouble() ?? 100,
         alignment: Alignment.center,
-
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.horizontalPadding ?? 0,
+          vertical: widget.verticalPadding ?? 0,
+        ),
         decoration: BoxDecoration(
           color: widget.disabled == true
               ? Colors.grey[400]
@@ -97,6 +104,7 @@ class _CustomButtonState extends State<CustomButton> {
                       fontSize: widget.fontSize,
                       color: widget.fontColor,
                       height: 1.2,
+                      decoration: TextDecoration.none,
                     ),
                     textAlign: TextAlign.center,
                     widget.text ?? "",

@@ -5,9 +5,12 @@ import 'package:wibble/firebase/firestore/index.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/lobby.dart';
+import 'package:wibble/components/ui/button.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
+import 'package:wibble/styles/text.dart';
 
 class InvitationWidget extends StatefulWidget {
-  const InvitationWidget({Key? key}) : super(key: key);
+  const InvitationWidget({super.key});
 
   @override
   State<InvitationWidget> createState() => _InvitationWidgetState();
@@ -60,20 +63,39 @@ class _InvitationWidgetState extends State<InvitationWidget>
         final shouldAccept = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Leave Current Game?'),
-            content: const Text(
-              'You are currently in a lobby. Accepting this invite will cancel your current game. Are you sure?',
+            backgroundColor: Colors.transparent,
+            content: ShadowContainer(
+              backgroundColor: Color(0xffF2EEDB),
+              child: Column(
+                children: [
+                  Text("Leave Current Game?", style: textStyle),
+                  Text(
+                    "You are currently in a lobby. Accepting this invite will cancel your current game. Are you sure?",
+                    style: textStyle.copyWith(fontSize: 16),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      CustomButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        text: "Accept Invite",
+                        fontSize: 24,
+                        horizontalPadding: 10,
+                        backgroundColor: Color(0xff10A958),
+                      ),
+                      CustomButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        text: "Cancel",
+                        fontSize: 24,
+                        horizontalPadding: 10,
+                        backgroundColor: Color(0xffFF2727),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Accept Invite'),
-              ),
-            ],
           ),
         );
 
@@ -278,187 +300,97 @@ class _InvitationWidgetState extends State<InvitationWidget>
             position: _slideAnimation,
             child: Container(
               margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-                border: Border.all(
-                  color: Colors.blue.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+              child: ShadowContainer(
+                backgroundColor: const Color(0xFF2D2D2D),
+                shadowColor: Colors.black,
+                outlineColor: Colors.black,
+                padding: 10,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Header with invite counter
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Game Invitation',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                    // Queue indicator for multiple invites
+                    if (invites.length > 1) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${invites.length - 1} more invite${invites.length - 1 == 1 ? '' : 's'} pending',
+                          style: textStyle.copyWith(
+                            fontSize: 16,
+                            color: Colors.white70,
+                            decoration: TextDecoration.none,
                           ),
                         ),
-                        if (invites.length > 1)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${invites.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                      ],
+                      ),
+                    ],
+                    // Title text
+                    Text(
+                      'Lobby Invite from',
+                      style: textStyle.copyWith(
+                        color: Colors.white,
+                        fontSize: 38,
+                        decoration: TextDecoration.none,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
-                    // Sender info
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            color: Colors.blue,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                currentInvite.sender.username,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              Text(
-                                'invited you to join their lobby',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    // Sender username
+                    Text(
+                      currentInvite.sender.username,
+                      style: textStyle.copyWith(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
                     // Action buttons
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton(
-                            onPressed: _isProcessing
-                                ? null
-                                : () => _handleReject(currentInvite),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey[100],
-                              foregroundColor: Colors.grey[700],
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(color: Colors.grey[300]!),
-                              ),
-                            ),
-                            child: _isProcessing
-                                ? const SizedBox(
-                                    height: 16,
-                                    width: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Decline',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
+                          child: CustomButton(
                             onPressed: _isProcessing
                                 ? null
                                 : () => _handleAccept(currentInvite),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: _isProcessing
-                                ? const SizedBox(
-                                    height: 16,
-                                    width: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Accept',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                            text: 'Accept',
+                            backgroundColor: Color(0xFF10A958),
+                            fontColor: Colors.white,
+                            fontSize: 38,
+                            shadowColor: Color.fromARGB(100, 76, 175, 79),
+                            borderColor: Color(0xFF10A958),
+                            borderRadius: 16,
+                            disabled: _isProcessing,
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: CustomButton(
+                            onPressed: _isProcessing
+                                ? null
+                                : () => _handleReject(currentInvite),
+                            text: 'Decline',
+                            backgroundColor: Color(0xFFFF2727),
+                            shadowColor: Color.fromARGB(100, 255, 39, 39),
+                            borderColor: Color(0xFFFF2727),
+                            borderRadius: 16,
+                            fontColor: Colors.white,
+                            fontSize: 38,
+                            disabled: _isProcessing,
                           ),
                         ),
                       ],
                     ),
-
-                    // Queue indicator for multiple invites
-                    if (invites.length > 1) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        '${invites.length - 1} more invite${invites.length - 1 == 1 ? '' : 's'} pending',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
