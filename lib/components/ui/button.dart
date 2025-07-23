@@ -9,6 +9,7 @@ class CustomButton extends StatefulWidget {
   final int? height;
   final int? width;
   final double? fontSize;
+  final double? borderRadius;
   final Color? fontColor;
   final Color? backgroundColor;
   final Color? borderColor;
@@ -27,6 +28,7 @@ class CustomButton extends StatefulWidget {
     this.height,
     this.width,
     this.fontSize = 52,
+    this.borderRadius = 16,
     this.fontColor = Colors.white,
     this.backgroundColor,
     this.borderColor = Colors.black,
@@ -73,7 +75,7 @@ class _CustomButtonState extends State<CustomButton> {
           color: widget.disabled == true
               ? Colors.grey[400]
               : widget.backgroundColor ?? Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(widget.borderRadius ?? 16),
           border: Border.all(
             color: widget.borderColor ?? Colors.black,
             width: 4,

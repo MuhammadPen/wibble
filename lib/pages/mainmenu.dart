@@ -10,14 +10,13 @@ import 'package:fpjs_pro_plugin/region.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wibble/components/ui/button.dart';
-import 'package:wibble/components/ui/shadow_container.dart';
+import 'package:wibble/components/ui/loading.dart';
 import 'package:wibble/components/widgets/how_to_play.dart';
 import 'package:wibble/components/widgets/title_card.dart';
-import 'package:wibble/components/widgets/user_card.dart';
 import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
-import 'package:wibble/styles/button.dart';
+import 'package:wibble/styles/text.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/identity.dart';
 import 'package:wibble/utils/lobby.dart';
@@ -69,136 +68,139 @@ class _MainmenuState extends State<Mainmenu> {
 
     return Scaffold(
       appBar: null,
-      body: Center(
-        child: isMatchmaking
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 20),
-                  Text(
-                    store.lobby.playerCount >= store.lobby.maxPlayers
-                        ? 'All players connected, starting match'
-                        : '${store.lobby.playerCount} out of ${store.lobby.maxPlayers} connected',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.cancel),
-                    label: Text("cancel"),
-                    onPressed: () async {
-                      // NOTE on all buttons: loading - disabled when loading
-                      try {
-                        await leaveLobby(
-                          lobbyId: store.lobby.id,
-                          playerId: store.user.id,
+      body: SafeArea(
+        child: Center(
+          child: isMatchmaking
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Loading(color: Colors.black),
+                    SizedBox(height: 20),
+                    Text(
+                      store.lobby.playerCount >= store.lobby.maxPlayers
+                          ? 'All players connected, starting match'
+                          : '${store.lobby.playerCount} out of ${store.lobby.maxPlayers} connected',
+                      style: textStyle,
+                    ),
+                    SizedBox(height: 10),
+                    CustomButton(
+                      onPressed: () async {
+                        try {
+                          await leaveLobby(
+                            lobbyId: store.lobby.id,
+                            playerId: store.user.id,
+                          );
+                          store.isMatchmaking = false;
+                          store.lobby = getEmptyLobby();
+                        } catch (e, stackTrace) {
+                          print('Error in matchmaking: $e');
+                          print('Stack trace: $stackTrace');
+                        }
+                      },
+                      text: "Cancel",
+                      backgroundColor: Color(0xffFF2727),
+                      width: 175,
+                      fontSize: 32,
+                      disabled: store.lobby.id.isEmpty,
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    TitleCard(user: store.user),
+                    SizedBox(height: 20),
+                    //-----menu buttons-----
+                    //-----1v1, 5v5-----
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 20,
+                      children: [
+                        CustomButton(
+                          onPressed: store.user.id.isEmpty
+                              ? null
+                              : () async {
+                                  try {
+                                    await store.searchForGame(
+                                      type: LobbyType.oneVOne,
+                                    );
+                                  } catch (e, stackTrace) {
+                                    print('Error in matchmaking: $e');
+                                    print('Stack trace: $stackTrace');
+                                  }
+                                },
+                          text: "1v1",
+                          width: 175,
+                          disabled: store.user.id.isEmpty,
+                          backgroundColor: Color(0xffFFC700),
+                        ),
+                        CustomButton(
+                          onPressed: store.user.id.isEmpty
+                              ? null
+                              : () async {
+                                  try {
+                                    print('Starting 5v5 matchmaking...');
+                                    await store.searchForGame(
+                                      type: LobbyType.custom,
+                                    );
+                                  } catch (e, stackTrace) {
+                                    print('Error in matchmaking: $e');
+                                    print('Stack trace: $stackTrace');
+                                  }
+                                },
+                          text: "5v5",
+                          width: 175,
+                          disabled: store.user.id.isEmpty,
+                          backgroundColor: Color(0xff10A958),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    //-----private lobby-----
+                    CustomButton(
+                      onPressed: () async {
+                        await store.createPrivateLobby();
+                        Navigator.pushReplacementNamed(
+                          context,
+                          "/${Routes.privateLobby.name}",
                         );
-                        store.isMatchmaking = false;
-                        store.lobby = getEmptyLobby();
-                      } catch (e, stackTrace) {
-                        print('Error in matchmaking: $e');
-                        print('Stack trace: $stackTrace');
-                      }
-                    },
-                    style: buttonStyle,
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  TitleCard(user: store.user),
-                  SizedBox(height: 20),
-                  //-----menu buttons-----
-                  //-----1v1, 5v5-----
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 20,
-                    children: [
-                      CustomButton(
-                        onPressed: store.user.id.isEmpty
-                            ? null
-                            : () async {
-                                try {
-                                  await store.searchForGame(
-                                    type: LobbyType.oneVOne,
-                                  );
-                                } catch (e, stackTrace) {
-                                  print('Error in matchmaking: $e');
-                                  print('Stack trace: $stackTrace');
-                                }
-                              },
-                        text: "1v1",
-                        width: 175,
-                        disabled: store.user.id.isEmpty,
-                        backgroundColor: Color(0xffFFC700),
-                      ),
-                      CustomButton(
-                        onPressed: store.user.id.isEmpty
-                            ? null
-                            : () async {
-                                try {
-                                  print('Starting 5v5 matchmaking...');
-                                  await store.searchForGame(
-                                    type: LobbyType.custom,
-                                  );
-                                } catch (e, stackTrace) {
-                                  print('Error in matchmaking: $e');
-                                  print('Stack trace: $stackTrace');
-                                }
-                              },
-                        text: "5v5",
-                        width: 175,
-                        disabled: store.user.id.isEmpty,
-                        backgroundColor: Color(0xff10A958),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  //-----private lobby-----
-                  CustomButton(
-                    onPressed: () async {
-                      await store.createPrivateLobby();
-                      Navigator.pushReplacementNamed(
-                        context,
-                        "/${Routes.privateLobby.name}",
-                      );
-                    },
-                    text: "Private lobby",
-                    backgroundColor: Color(0xffFF7300),
-                    width: 370,
-                    fontSize: 48,
-                    disabled: store.user.id.isEmpty,
-                  ),
-                  SizedBox(height: 20),
-                  //-----how to play, exit-----
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: 20,
-                    children: [
-                      CustomButton(
-                        onPressed: () {
-                          HowToPlayDialog.show(context);
-                        },
-                        text: "How to play",
-                        width: 175,
-                        backgroundColor: Color(0xff0099FF),
-                        fontSize: 32,
-                      ),
-                      if (!kIsWeb)
+                      },
+                      text: "Private lobby",
+                      backgroundColor: Color(0xffFF7300),
+                      width: 370,
+                      fontSize: 48,
+                      disabled: store.user.id.isEmpty,
+                    ),
+                    SizedBox(height: 20),
+                    //-----how to play, exit-----
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 20,
+                      children: [
                         CustomButton(
                           onPressed: () {
-                            exit(0);
+                            HowToPlayDialog.show(context);
                           },
-                          text: "Exit",
+                          text: "How to play",
                           width: 175,
-                          backgroundColor: Color(0xffFF2727),
+                          backgroundColor: Color(0xff0099FF),
+                          fontSize: 32,
                         ),
-                    ],
-                  ),
-                ],
-              ),
+                        if (!kIsWeb)
+                          CustomButton(
+                            onPressed: () {
+                              exit(0);
+                            },
+                            text: "Exit",
+                            width: 175,
+                            backgroundColor: Color(0xffFF2727),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }

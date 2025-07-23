@@ -16,49 +16,82 @@ class TitleCard extends StatelessWidget {
       child: Column(
         children: [
           //wibble text
-          Column(
-            children: [
-              Text(
-                "W____",
-                style: TextStyle(
-                  fontFamily: "Bungee",
-                  fontSize: 58,
-                  color: Color(0xffFFC700),
+          Container(
+            height: 340, // Adjust height as needed
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    "W____",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Bungee",
+                      fontSize: 58,
+                      color: Color(0xffFFC700),
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                "_I___",
-                style: TextStyle(
-                  fontFamily: "Bungee",
-                  fontSize: 58,
-                  color: Color(0xff32CC7A),
+                Positioned(
+                  top: 62, // 58 - 10 for overlap
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    "_I___",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Bungee",
+                      fontSize: 58,
+                      color: Color(0xff32CC7A),
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                "__B__",
-                style: TextStyle(
-                  fontFamily: "Bungee",
-                  fontSize: 58,
-                  color: Color(0xff0099FF),
+                Positioned(
+                  top: 62 + 62, // 48 + 48
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    "__B__",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Bungee",
+                      fontSize: 58,
+                      color: Color(0xff0099FF),
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                "___L_",
-                style: TextStyle(
-                  fontFamily: "Bungee",
-                  fontSize: 58,
-                  color: Color(0xffFF7300),
+                Positioned(
+                  top: 62 + 62 + 62, // 96 + 48
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    "___L_",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Bungee",
+                      fontSize: 58,
+                      color: Color(0xffFF7300),
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                "____E",
-                style: TextStyle(
-                  fontFamily: "Bungee",
-                  fontSize: 58,
-                  color: Color(0xffFF0000),
+                Positioned(
+                  top: 62 + 62 + 62 + 62, // 144 + 48
+                  left: 0,
+                  right: 0,
+                  child: Text(
+                    "____E",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Bungee",
+                      fontSize: 58,
+                      color: Color(0xffFF0000),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           //user card
           UserCard(user: user),

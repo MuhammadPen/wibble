@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wibble/components/ui/clock.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
+import 'package:wibble/styles/text.dart';
 import 'package:wibble/types.dart';
 
 class GameStatus extends StatelessWidget {
@@ -16,57 +18,68 @@ class GameStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      width: MediaQuery.of(context).size.width * 0.75,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(25),
-      ),
+    return SizedBox(
+      width: 370,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClockWidget(
-            remainingSeconds: remainingSeconds,
-            totalSeconds: remainingSeconds,
+          ShadowContainer(
+            backgroundColor: Color(0xffF2EEDB),
+            width: 90,
+            height: 90,
+            padding: 0,
+            child: ClockWidget(remainingSeconds: remainingSeconds, size: 100),
           ),
           SizedBox(width: 15),
           Expanded(
-            child: Column(
-              children: players.entries.map((entry) {
-                final playerId = entry.key;
-                final playerInfo = entry.value;
-                final isCurrentUser = playerId == currentUserId;
+            child: ShadowContainer(
+              backgroundColor: Color(0xffF2EEDB),
+              // width: 100,
+              // height: 200,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: players.entries
+                      .toList()
+                      .where((entry) => entry.key == currentUserId)
+                      .followedBy(
+                        players.entries.toList().where(
+                          (entry) => entry.key != currentUserId,
+                        ),
+                      )
+                      .map((entry) {
+                        final playerId = entry.key;
+                        final playerInfo = entry.value;
+                        final isCurrentUser = playerId == currentUserId;
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isCurrentUser ? "Your score" : playerInfo.user.username,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: isCurrentUser
-                              ? Colors.blue[700]
-                              : Colors.black,
-                        ),
-                      ),
-                      Text(
-                        '${playerInfo.score}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: isCurrentUser
-                              ? Colors.blue[700]
-                              : Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              isCurrentUser
+                                  ? "Your score"
+                                  : playerInfo.user.username,
+                              style: textStyle.copyWith(
+                                fontSize: 22,
+                                color: isCurrentUser
+                                    ? Colors.blue[700]
+                                    : Colors.black,
+                              ),
+                            ),
+                            Text(
+                              '${playerInfo.score}',
+                              style: textStyle.copyWith(
+                                fontSize: 22,
+                                color: isCurrentUser
+                                    ? Colors.blue[700]
+                                    : Colors.black,
+                              ),
+                            ),
+                          ],
+                        );
+                      })
+                      .toList(),
+                ),
+              ),
             ),
           ),
         ],

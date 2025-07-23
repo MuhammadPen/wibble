@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wibble/styles/text.dart';
 
 class WordGrid extends StatelessWidget {
   final List<List<String>> guessGrid;
@@ -36,12 +37,17 @@ class WordGrid extends StatelessWidget {
                   for (var row = 0; row < guessGrid.length; row++)
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 100),
-                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      padding: EdgeInsets.symmetric(
+                        vertical: isWordComplete && cursorPosition[0] == row
+                            ? 10
+                            : 5,
+                        horizontal: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: isWordComplete && cursorPosition[0] == row
-                            ? Colors.blueAccent.withValues(alpha: 0.8)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(5),
+                            ? Color(0xff0099FF).withValues(alpha: 1)
+                            : Color(0xffF2EEDB),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
@@ -50,7 +56,19 @@ class WordGrid extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 4,
                               ),
-                              child: _buildCell(row, col, boxSize),
+                              child: _buildCell(
+                                row: row,
+                                col: col,
+                                size: boxSize,
+                                textColor:
+                                    isWordComplete && cursorPosition[0] == row
+                                    ? Colors.white
+                                    : Colors.black,
+                                backgroundColor:
+                                    isWordComplete && cursorPosition[0] == row
+                                    ? Color(0xff0099FF)
+                                    : _getCellBackgroundColor(row, col),
+                              ),
                             ),
                         ],
                       ),
@@ -65,31 +83,34 @@ class WordGrid extends StatelessWidget {
   }
 
   /// Build an individual cell in the word grid
-  Widget _buildCell(int row, int col, double size) {
+  Widget _buildCell({
+    required int row,
+    required int col,
+    required double size,
+    Color? textColor,
+    Color? backgroundColor,
+  }) {
     final bool isActive = _isCurrentCell(row, col);
-    final Color backgroundColor = _getCellBackgroundColor(row, col);
-    final Color textColor = _getCellTextColor(row, col);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100),
       width: size,
       height: size,
       decoration: BoxDecoration(
-        border: Border.all(
-          color: isActive ? Colors.blue : Colors.black,
-          width: isActive ? 2.0 : 1.0,
-        ),
-        borderRadius: BorderRadius.circular(isActive ? 12 : 4),
-        color: isActive ? Colors.blue.withValues(alpha: 0.1) : backgroundColor,
+        border: Border.all(color: isActive ? Color(0xff0099FF) : Colors.black),
+        boxShadow: [
+          BoxShadow(
+            color: isActive ? Color.fromARGB(255, 0, 124, 206) : Colors.black,
+            offset: Offset(-3, 3),
+          ),
+        ],
+        borderRadius: BorderRadius.circular(12),
+        color: backgroundColor,
       ),
       child: Center(
         child: Text(
           guessGrid[row][col],
-          style: TextStyle(
-            fontSize: size * 0.5,
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
+          style: textStyle.copyWith(color: textColor),
         ),
       ),
     );
@@ -99,7 +120,7 @@ class WordGrid extends StatelessWidget {
   Color _getCellBackgroundColor(int row, int col) {
     // Only apply coloring to completed rows (rows less than cursor row)
     if (row >= cursorPosition[0]) {
-      return Colors.transparent;
+      return Color(0xffF2EEDB);
     }
 
     final String guessedLetter = guessGrid[row][col].toLowerCase();
@@ -107,32 +128,21 @@ class WordGrid extends StatelessWidget {
 
     // If the cell is empty, return transparent
     if (guessedLetter.isEmpty) {
-      return Colors.transparent;
+      return Color(0xffF2EEDB);
     }
 
     // Check if letter is in correct position (green)
     if (col < targetWordLower.length && guessedLetter == targetWordLower[col]) {
-      return Colors.green.withValues(alpha: 0.8);
+      return Color(0xff10A958);
     }
 
     // Check if letter is in the word but wrong position (yellow)
     if (targetWordLower.contains(guessedLetter)) {
-      return Colors.yellow.withValues(alpha: 0.8);
+      return Color(0xffFFC700);
     }
 
     // Letter is not in the word (light grey)
-    return Colors.grey[300]!;
-  }
-
-  /// Get the text color for a cell based on background
-  Color _getCellTextColor(int row, int col) {
-    final backgroundColor = _getCellBackgroundColor(row, col);
-
-    // Use white text for colored backgrounds, black for transparent
-    if (backgroundColor == Colors.transparent) {
-      return Colors.black;
-    }
-    return Colors.white;
+    return Color(0xffB6B2A4);
   }
 
   /// Check if this cell is the current active cell

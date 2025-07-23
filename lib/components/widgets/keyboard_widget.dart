@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:wibble/components/ui/button.dart';
+import 'package:wibble/styles/text.dart';
 
 class KeyboardWidget extends StatefulWidget {
   final Function(String) onKeyTap;
@@ -92,7 +94,9 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
           Icons.backspace,
           widget.isCurrentWordComplete,
         ),
+        const SizedBox(width: 2),
         ...letters.map((letter) => _buildKey(letter, constraints)),
+        const SizedBox(width: 2),
         _buildSpecialKey(
           'ENTER',
           constraints,
@@ -113,19 +117,11 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
       child: SizedBox(
         width: keyWidth,
         height: keyWidth * 1.5,
-        child: ElevatedButton(
+        child: CustomButton(
           onPressed: () => widget.onKeyTap(letter),
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
+          borderRadius: 10,
           child: Center(
-            child: Text(
-              letter,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            child: Text(letter, style: textStyle.copyWith(fontSize: 28)),
           ),
         ),
       ),
@@ -157,18 +153,13 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
       padding: const EdgeInsets.all(2.0),
       child: SizedBox(
         width: keyWidth,
-        height: keyWidth * 1.5,
-        child: ElevatedButton(
+        height: keyWidth,
+        child: CustomButton(
           onPressed: isEnterkey && !isCurrentWordComplete ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            backgroundColor: isEnterkey && isCurrentWordComplete
-                ? Colors.blueAccent.withValues(alpha: 0.8)
-                : Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
+          disabled: isEnterkey && !isCurrentWordComplete,
+          backgroundColor: isEnterkey && isCurrentWordComplete
+              ? Color(0xff0099FF)
+              : Colors.white,
           child: Center(
             child: Icon(
               icon,

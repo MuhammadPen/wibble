@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:wibble/components/ui/button.dart';
+import 'package:wibble/components/ui/text_form_field.dart';
 
 class InviteUserForm extends StatefulWidget {
   final Function(String) onInvite;
@@ -47,13 +49,10 @@ class _InviteUserFormState extends State<InviteUserForm> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextFormField(
+          CustomTextFormField(
             controller: _userIdController,
-            decoration: const InputDecoration(
-              labelText: 'User ID',
-              hintText: 'Enter user ID to invite',
-              border: OutlineInputBorder(),
-            ),
+            // label: "User ID",
+            helperText: "Enter user ID to invite",
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Please enter a user ID';
@@ -62,9 +61,13 @@ class _InviteUserFormState extends State<InviteUserForm> {
             },
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
+          CustomButton(
             onPressed: _isButtonEnabled ? _handleInvite : null,
-            child: const Text('Invite'),
+            disabled: !_isButtonEnabled,
+            text: "Invite",
+            backgroundColor: Color(0xff0099FF),
+            width: 175,
+            fontSize: 32,
           ),
         ],
       ),

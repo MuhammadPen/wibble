@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:wibble/components/ui/button.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
+import 'package:wibble/styles/text.dart';
 
 class CustomDialog extends StatelessWidget {
   // Static map to track open dialogs by their keys
@@ -7,7 +10,8 @@ class CustomDialog extends StatelessWidget {
   final String message;
   final VoidCallback? onClose;
   final String buttonText;
-
+  final double? textSize;
+  final double? buttonTextSize;
   final String dialogKey;
 
   const CustomDialog({
@@ -16,24 +20,50 @@ class CustomDialog extends StatelessWidget {
     required this.dialogKey,
     this.onClose,
     this.buttonText = 'Close',
+    this.buttonTextSize,
+    this.textSize,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      content: Text(message, style: const TextStyle(fontSize: 16)),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _openDialogs.remove(dialogKey);
-            if (onClose != null) {
-              onClose!();
-            }
-          },
-          child: Text(buttonText),
+      backgroundColor: Colors.transparent,
+      // scrollable: true,
+      insetPadding: EdgeInsets.symmetric(horizontal: 0),
+      content: ShadowContainer(
+        backgroundColor: Color(0xffF2EEDB),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 20,
+            children: [
+              Text(
+                message,
+                style: textStyle.copyWith(fontSize: textSize ?? 18),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  CustomButton(
+                    backgroundColor: Color(0xffFF7300),
+                    width: 150,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _openDialogs.remove(dialogKey);
+                      if (onClose != null) {
+                        onClose!();
+                      }
+                    },
+                    text: buttonText,
+                    fontSize: buttonTextSize ?? 32,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
+      actions: [],
     );
   }
 
@@ -74,6 +104,8 @@ class CustomDialog extends StatelessWidget {
     VoidCallback? onClose,
     String buttonText = 'Close',
     bool barrierDismissible = true,
+    double? buttonTextSize,
+    double? textSize,
   }) {
     // If dialog with this key already exists, don't create another
     if (_openDialogs.containsKey(dialogKey)) {
@@ -99,6 +131,8 @@ class CustomDialog extends StatelessWidget {
             dialogKey: dialogKey,
             onClose: onClose,
             buttonText: buttonText,
+            buttonTextSize: buttonTextSize,
+            textSize: textSize,
           ),
         );
       },

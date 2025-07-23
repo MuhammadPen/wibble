@@ -45,6 +45,10 @@ class _UserFormDialogState extends State<UserFormDialog> {
             mainAxisSize: MainAxisSize.min,
             spacing: 10,
             children: [
+              Text(
+                "Username",
+                style: TextStyle(fontSize: 32, fontFamily: "Baloo"),
+              ),
               Form(
                 key: _formKey,
                 child: Column(

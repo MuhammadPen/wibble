@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wibble/components/ui/button.dart';
 import 'package:wibble/components/widgets/lobby_status.dart';
 import 'package:wibble/components/widgets/invite_user_form.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/firebase/firestore/index.dart';
 import 'package:wibble/main.dart';
-import 'package:wibble/styles/button.dart';
+import 'package:wibble/styles/text.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/lobby.dart';
 
@@ -47,15 +48,13 @@ class _PrivateLobbyState extends State<PrivateLobby> {
       appBar: null,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
-        spacing: 50,
+        spacing: 20,
         children: [
-          SizedBox(height: 20),
+          SizedBox(height: 50),
           LobbyStatus(lobby: lobby, currentUserId: store.user.id),
           Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.8,
-              ),
+              constraints: BoxConstraints(maxWidth: 370),
               child: InviteUserForm(
                 onInvite: (userId) async {
                   final doesUserExist = await Firestore().doesDocumentExist(
@@ -101,7 +100,7 @@ class _PrivateLobbyState extends State<PrivateLobby> {
           if (_showUserDoesNotExist)
             Text(
               "User does not exist",
-              style: TextStyle(color: Colors.red),
+              style: textStyle.copyWith(color: Color(0xffFF2727)),
               textAlign: TextAlign.center,
             ),
           if (_showInviteSent)
@@ -112,11 +111,11 @@ class _PrivateLobbyState extends State<PrivateLobby> {
             ),
           SizedBox(height: 20),
           if (isAdmin)
-            Column(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 10,
               children: [
-                ElevatedButton(
-                  style: buttonStyle,
+                CustomButton(
                   onPressed: () async {
                     // Set the lobby start time in Firestore
                     // The navigation listener will handle the navigation
@@ -125,49 +124,46 @@ class _PrivateLobbyState extends State<PrivateLobby> {
                       startTime: DateTime.now(),
                     );
                   },
-                  child: const Text('Start game'),
+                  text: "Start",
+                  backgroundColor: Color(0xff10A958),
+                  width: 175,
+                  fontSize: 32,
                 ),
-              ],
-            ),
-          if (isAdmin)
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  style: buttonStyle,
-                  onPressed: () async {
-                    await cancelPrivateLobby(lobbyId: lobby.id);
-                    store.lobby = getEmptyLobby();
-                    store.cancelLobbySubscription();
-                    Navigator.pushReplacementNamed(
-                      context,
-                      "/${Routes.mainmenu.name}",
-                    );
-                  },
-                  child: const Text('Cancel lobby'),
-                ),
-              ],
-            ),
-          if (!isAdmin)
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  style: buttonStyle,
-                  onPressed: () async {
-                    await leaveLobby(
-                      lobbyId: lobby.id,
-                      playerId: store.user.id,
-                    );
-                    store.lobby = getEmptyLobby();
-                    store.cancelLobbySubscription();
-                    Navigator.pushReplacementNamed(
-                      context,
-                      "/${Routes.mainmenu.name}",
-                    );
-                  },
-                  child: const Text('Leave lobby'),
-                ),
+                if (isAdmin)
+                  CustomButton(
+                    onPressed: () async {
+                      await cancelPrivateLobby(lobbyId: lobby.id);
+                      store.lobby = getEmptyLobby();
+                      store.cancelLobbySubscription();
+                      Navigator.pushReplacementNamed(
+                        context,
+                        "/${Routes.mainmenu.name}",
+                      );
+                    },
+                    text: "Cancel",
+                    backgroundColor: Color(0xffFF2727),
+                    width: 175,
+                    fontSize: 32,
+                  ),
+                if (!isAdmin)
+                  CustomButton(
+                    onPressed: () async {
+                      await leaveLobby(
+                        lobbyId: lobby.id,
+                        playerId: store.user.id,
+                      );
+                      store.lobby = getEmptyLobby();
+                      store.cancelLobbySubscription();
+                      Navigator.pushReplacementNamed(
+                        context,
+                        "/${Routes.mainmenu.name}",
+                      );
+                    },
+                    text: "Leave",
+                    backgroundColor: Color(0xffFF2727),
+                    width: 175,
+                    fontSize: 32,
+                  ),
               ],
             ),
         ],

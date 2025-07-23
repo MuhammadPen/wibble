@@ -2,13 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:wibble/components/ui/button.dart';
 import 'package:wibble/components/ui/countdown.dart';
 import 'package:wibble/components/ui/dialog.dart';
+import 'package:wibble/components/ui/shadow_container.dart';
 import 'package:wibble/components/widgets/game_status.dart';
 import 'package:wibble/components/widgets/keyboard_widget.dart';
 import 'package:wibble/components/widgets/word_grid.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
+import 'package:wibble/styles/text.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/lobby.dart';
 
@@ -28,13 +31,13 @@ class _GameplayState extends State<Gameplay> {
   int _score = 0;
   bool _isCurrentRowFilled = false;
   bool _areAttemptsOver = false;
-  bool _showCurrentWord = false;
+  bool _showCurrentWord = true;
   late FocusNode _focusNode;
 
   // Timer variables
   Timer? _gameTimer;
-  final int _roundDuration = 180; // seconds
-  int _remainingSeconds = 180; // 3 minutes = 180 seconds
+  final int _roundDuration = 5; // seconds
+  int _remainingSeconds = 5; // 3 minutes = 180 seconds
   bool _isTimeUp = false;
 
   @override
@@ -66,18 +69,39 @@ class _GameplayState extends State<Gameplay> {
             await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text('Leave game?'),
-                content: const Text('Are you sure you want to resign?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Cancel'),
+                backgroundColor: Colors.transparent,
+                content: ShadowContainer(
+                  backgroundColor: Color(0xffF2EEDB),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Are you sure you want to leave the game?',
+                        style: textStyle.copyWith(fontSize: 28),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 10,
+                        children: [
+                          CustomButton(
+                            backgroundColor: Color(0xff10A958),
+                            text: 'Cancel',
+                            fontSize: 32,
+                            width: 140,
+                            onPressed: () => Navigator.of(context).pop(false),
+                          ),
+                          CustomButton(
+                            backgroundColor: Color(0xffFF2727),
+                            text: 'Leave',
+                            fontSize: 32,
+                            width: 140,
+                            onPressed: () => Navigator.of(context).pop(true),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Leave'),
-                  ),
-                ],
+                ),
               ),
             ) ??
             false;
@@ -310,6 +334,8 @@ class _GameplayState extends State<Gameplay> {
         dialogKey: DialogKeys.gameWon.name,
         message: 'You win!',
         buttonText: 'Back to Menu',
+        textSize: 28,
+        buttonTextSize: 28,
         onClose: () {
           // reset lobby data
           store.lobby = getEmptyLobby();
@@ -323,6 +349,8 @@ class _GameplayState extends State<Gameplay> {
         dialogKey: DialogKeys.gameLost.name,
         message: 'You lost :(',
         buttonText: 'Back to Menu',
+        textSize: 28,
+        buttonTextSize: 28,
         onClose: () {
           // reset lobby data
           store.lobby = getEmptyLobby();
@@ -336,6 +364,8 @@ class _GameplayState extends State<Gameplay> {
         dialogKey: DialogKeys.gameTied.name,
         message: 'Game tied!',
         buttonText: 'Back to Menu',
+        textSize: 28,
+        buttonTextSize: 28,
         onClose: () {
           // reset lobby data
           store.lobby = getEmptyLobby();
