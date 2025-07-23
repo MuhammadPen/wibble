@@ -36,8 +36,8 @@ class _GameplayState extends State<Gameplay> {
 
   // Timer variables
   Timer? _gameTimer;
-  final int _roundDuration = 5; // seconds
-  int _remainingSeconds = 5; // 3 minutes = 180 seconds
+  final int _roundDuration = 180; // seconds
+  int _remainingSeconds = 180; // 3 minutes = 180 seconds
   bool _isTimeUp = false;
 
   @override
