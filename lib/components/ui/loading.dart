@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class Loading extends StatefulWidget {
   final Color color;
-  const Loading({super.key, this.color = Colors.white});
+  final double? size;
+  const Loading({super.key, this.color = Colors.white, this.size});
 
   @override
   State<Loading> createState() => _LoadingWidgetState();
@@ -29,8 +30,8 @@ class _LoadingWidgetState extends State<Loading>
 
   Widget _buildDot(bool isVisible) {
     return Container(
-      width: 12,
-      height: 12,
+      width: widget.size ?? 12,
+      height: widget.size ?? 12,
       margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: isVisible ? widget.color : Colors.transparent,

@@ -17,7 +17,7 @@ class CustomButton extends StatefulWidget {
   final Color? borderColor;
   final Color? shadowColor;
   final Color? loadingColor;
-
+  final double? loadingSize;
   @override
   State<CustomButton> createState() => _CustomButtonState();
 
@@ -38,6 +38,7 @@ class CustomButton extends StatefulWidget {
     this.borderColor = Colors.black,
     this.shadowColor,
     this.loadingColor = Colors.white,
+    this.loadingSize,
   });
 }
 
@@ -96,7 +97,10 @@ class _CustomButtonState extends State<CustomButton> {
         ),
 
         child: _isLoading
-            ? Loading(color: widget.loadingColor ?? Colors.white)
+            ? Loading(
+                color: widget.loadingColor ?? Colors.white,
+                size: widget.loadingSize ?? 12,
+              )
             : widget.child ??
                   Text(
                     style: TextStyle(

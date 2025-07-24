@@ -141,6 +141,7 @@ class Store extends ChangeNotifier {
 
   bool get isMatchmaking => _isMatchmaking;
   set isMatchmaking(bool value) {
+    print('🔄 isMatchmaking set to $value');
     _isMatchmaking = value;
     notifyListeners();
   }
@@ -168,13 +169,9 @@ class Store extends ChangeNotifier {
   }
 
   Future<void> resumeMatch() async {
-    print('🔄 resumeMatch called with user.id: ${user.id}');
     final lobby = await checkForOnGoingMatch(playerId: user.id);
 
     if (lobby != null) {
-      print(
-        '✅ Found ongoing lobby: ${lobby.id}, type: ${lobby.type.name}, playerCount: ${lobby.playerCount}, maxPlayers: ${lobby.maxPlayers}, startTime: ${lobby.startTime}',
-      );
       this.lobby = lobby;
       notifyListeners();
     } else {

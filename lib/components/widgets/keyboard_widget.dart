@@ -155,6 +155,7 @@ class _KeyboardWidgetState extends State<KeyboardWidget> {
         width: keyWidth,
         height: keyWidth,
         child: CustomButton(
+          loadingSize: 5,
           onPressed: isEnterkey && !isCurrentWordComplete ? null : onPressed,
           disabled: isEnterkey && !isCurrentWordComplete,
           backgroundColor: isEnterkey && isCurrentWordComplete
