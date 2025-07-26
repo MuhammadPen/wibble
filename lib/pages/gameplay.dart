@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/components/ui/button.dart';
 import 'package:wibble/components/ui/countdown.dart';
-import 'package:wibble/components/ui/dialog.dart';
 import 'package:wibble/components/ui/shadow_container.dart';
 import 'package:wibble/components/widgets/game_status.dart';
 import 'package:wibble/components/widgets/gameover_card.dart';

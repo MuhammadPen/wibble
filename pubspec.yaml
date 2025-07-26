@@ -73,6 +73,8 @@ flutter:
     - lib/assets/5-letter-words.txt
     - lib/assets/6-letter-words.txt
     - lib/assets/7-letter-words.txt
+    - lib/assets/icons/android_icon.png
+    - lib/assets/icons/ios_icon.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -141,7 +141,6 @@ class Store extends ChangeNotifier {
 
   bool get isMatchmaking => _isMatchmaking;
   set isMatchmaking(bool value) {
-    print('🔄 isMatchmaking set to $value');
     _isMatchmaking = value;
     notifyListeners();
   }
@@ -245,3 +244,4 @@ class Store extends ChangeNotifier {
 }
 
 //TODO doesnt resume (to menus) properly when launching for the first time
+//TODO private lobby not starting

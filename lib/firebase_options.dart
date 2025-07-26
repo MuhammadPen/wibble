@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: Env.FIREBASE_API_KEY_ANDROID,
-    appId: '1:196967614310:android:f30c9e5b699ddbfadb6aa7',
+    appId: '1:196967614310:android:ed060f74c40e8788db6aa7',
     messagingSenderId: '196967614310',
     projectId: 'wibble-7b271',
     storageBucket: 'wibble-7b271.firebasestorage.app',
@@ -61,11 +61,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: Env.FIREBASE_API_KEY_IOS,
-    appId: '1:196967614310:ios:2590cda8772f25cbdb6aa7',
+    appId: '1:196967614310:ios:f877bc018687097edb6aa7',
     messagingSenderId: '196967614310',
     projectId: 'wibble-7b271',
     storageBucket: 'wibble-7b271.firebasestorage.app',
-    iosBundleId: 'com.example.wibble',
+    iosBundleId: 'com.muhammadpen.wible',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
