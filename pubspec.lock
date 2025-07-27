@@ -345,7 +345,7 @@ packages:
     source: sdk
     version: "0.0.0"
   fpjs_pro_plugin:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: fpjs_pro_plugin
       sha256: f8c9189684557e5e5e17e1983f9407a2433cb17027b08719c599c1e463337aa3
