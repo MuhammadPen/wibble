@@ -39,6 +39,6 @@ platform :android do
   desc "Deploy a new beta build to the Google Play"
   lane :beta do
     gradle(task: 'bundle', build_type: 'Release')
-    upload_to_play_store(track: 'internal', skip_upload_changelogs: true)
+    upload_to_play_store(track: 'alpha', skip_upload_changelogs: true)
   end
 end
