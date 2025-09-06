@@ -219,41 +219,51 @@ class _MainmenuState extends State<Mainmenu> {
   }
 
   void _onStoreChanged() async {
-    // fetch the store again to get updated values
-    final store = context.read<Store>();
+    // Use the stored store reference instead of accessing through context
+    // This prevents the "deactivated widget" error when the listener fires after dispose
+    if (!mounted) return;
 
     // Check if we need to resume match now that user is loaded
-    if (!_hasCheckedResumeMatch && store.user.id.isNotEmpty) {
+    if (!_hasCheckedResumeMatch && _store.user.id.isNotEmpty) {
       setState(() {
         _hasCheckedResumeMatch = true;
       });
-      store.resumeMatch();
+      _store.resumeMatch();
       return; // Return early to let resumeMatch trigger the next _onStoreChanged
     }
 
     // Only check lobby status if we have a valid lobby with an ID
-    if (store.lobby.id.isNotEmpty) {
-      if (store.user.id.isEmpty) {
+    if (_store.lobby.id.isNotEmpty) {
+      if (_store.user.id.isEmpty) {
         return;
       }
-      if (store.lobby.players.isEmpty) {
+      if (_store.lobby.players.isEmpty) {
         return;
       }
 
       // If on a private lobby and the game has not started, take me to the private lobby page
-      if (store.lobby.type == LobbyType.private &&
-          store.lobby.startTime == null) {
+      if (_store.lobby.type == LobbyType.private &&
+          _store.lobby.startTime == null) {
         Navigator.pushReplacementNamed(context, "/${Routes.privateLobby.name}");
         return;
       }
 
-      // Check if lobby is full
-      final isLobbyFull = store.lobby.playerCount >= store.lobby.maxPlayers;
-      final isPlayerInLobby = store.lobby.players.containsKey(store.user.id);
+      final isLobbyFull = _store.lobby.playerCount >= _store.lobby.maxPlayers;
+      final isPlayerInLobby = _store.lobby.players.containsKey(_store.user.id);
+      final isPrivateLobby = _store.lobby.type == LobbyType.private;
+      final startTime = _store.lobby.startTime;
 
+      if (isPrivateLobby && startTime != null && !_hasNavigated) {
+        _hasNavigated = true;
+        _store.isMatchmaking = false;
+        Navigator.pushReplacementNamed(context, "/${Routes.gameplay.name}");
+        return;
+      }
+
+      // Check if lobby is full
       if (isLobbyFull && !_hasNavigated) {
         _hasNavigated = true;
-        store.isMatchmaking = false;
+        _store.isMatchmaking = false;
         Navigator.pushReplacementNamed(context, "/${Routes.gameplay.name}");
         return;
       }
@@ -261,8 +271,8 @@ class _MainmenuState extends State<Mainmenu> {
       // If user is in lobby but lobby is not full, show matchmaking state
       if (isPlayerInLobby && !isLobbyFull && !_hasNavigated) {
         // Only set matchmaking to true if it's not already true (prevent infinite loop)
-        if (!store.isMatchmaking) {
-          store.isMatchmaking = true;
+        if (!_store.isMatchmaking) {
+          _store.isMatchmaking = true;
         }
       }
     }

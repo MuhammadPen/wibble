@@ -201,17 +201,11 @@ class _PrivateLobbyState extends State<PrivateLobby> {
   }
 
   void _onStoreChanged() {
-    // fetch the store again to get updated values
-    final store = context.read<Store>();
-    //get current route
-    final currentRoute = ModalRoute.of(context)?.settings.name;
-    if (currentRoute == "/${Routes.privateLobby.name}") {
-      return;
-    }
+    if (!mounted) return;
 
     // If on a private lobby and the game has started, take me to the gameplay page
-    if (store.lobby.type == LobbyType.private &&
-        store.lobby.startTime != null) {
+    if (_store.lobby.type == LobbyType.private &&
+        _store.lobby.startTime != null) {
       Navigator.pushReplacementNamed(context, "/${Routes.gameplay.name}");
       return;
     }
