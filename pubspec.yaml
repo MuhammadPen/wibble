@@ -44,6 +44,7 @@ dependencies:
   shared_preferences: ^2.5.3
   flutter_launcher_icons: ^0.14.4
   fpjs_pro_plugin: ^3.3.2
+  audioplayers: ^6.5.1
 
 dev_dependencies:
   flutter_test:
@@ -70,9 +71,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib/assets/5-letter-words.txt
-    - lib/assets/icons/android_icon.png
-    - lib/assets/icons/ios_icon.png
+    - assets/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

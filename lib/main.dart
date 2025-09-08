@@ -12,6 +12,7 @@ import 'package:wibble/pages/mainmenu.dart';
 import 'package:wibble/pages/private_lobby.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/lobby.dart';
+import 'package:wibble/utils/soundEngine.dart';
 
 import 'firebase/index.dart';
 
@@ -40,7 +41,43 @@ class MyAppContent extends StatefulWidget {
   State<MyAppContent> createState() => _MyAppContentState();
 }
 
-class _MyAppContentState extends State<MyAppContent> {
+class _MyAppContentState extends State<MyAppContent>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    SoundEngine.playBackgroundMusic();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        // App is in background - pause background music
+        SoundEngine.pauseBackgroundMusic();
+        break;
+      case AppLifecycleState.resumed:
+        // App is back to foreground - resume background music
+        SoundEngine.resumeBackgroundMusic();
+        break;
+      case AppLifecycleState.detached:
+        // App is being terminated - stop all audio
+        SoundEngine.stopBackgroundMusic();
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -244,4 +281,3 @@ class Store extends ChangeNotifier {
 }
 
 //TODO doesnt resume (to menus) properly when launching for the first time
-//TODO private lobby not starting

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wibble/components/ui/loading.dart';
+import 'package:wibble/utils/soundEngine.dart';
 
 class CustomButton extends StatefulWidget {
   final Widget? child;
@@ -52,18 +53,24 @@ class _CustomButtonState extends State<CustomButton> {
       onTap: widget.disabled == true ? null : onPressed,
       onTapDown: (details) {
         if (_isLoading || widget.disabled == true) return;
+        SoundEngine.playSound('buttonDown', 0.5);
+
         setState(() {
           _isPressed = true;
         });
       },
       onTapUp: (details) {
         if (_isLoading || widget.disabled == true) return;
+        SoundEngine.playSound('buttonUp', 0.5);
+
         setState(() {
           _isPressed = false;
         });
       },
       onTapCancel: () {
         if (_isLoading || widget.disabled == true) return;
+        SoundEngine.playSound('buttonUp', 0.5);
+
         setState(() {
           _isPressed = false;
         });

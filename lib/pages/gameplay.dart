@@ -14,6 +14,7 @@ import 'package:wibble/main.dart';
 import 'package:wibble/styles/text.dart';
 import 'package:wibble/types.dart';
 import 'package:wibble/utils/lobby.dart';
+import 'package:wibble/utils/soundEngine.dart';
 
 class Gameplay extends StatefulWidget {
   const Gameplay({super.key});
@@ -36,9 +37,10 @@ class _GameplayState extends State<Gameplay> {
 
   // Timer variables
   Timer? _gameTimer;
-  final int _roundDuration = 180; // seconds
-  int _remainingSeconds = 180; // 3 minutes = 180 seconds
+  final int _roundDuration = 40; // seconds
+  int _remainingSeconds = 40; // 3 minutes = 180 seconds
   bool _isTimeUp = false;
+  bool _timeEndingSoundPlayed = false;
 
   @override
   void initState() {
@@ -131,9 +133,10 @@ class _GameplayState extends State<Gameplay> {
                     durationInSeconds: lobbyData.startTime == null ? 3 : 0,
                     onCountdownComplete: () {
                       _startGameTimer();
+                      SoundEngine.playSound('gameStart');
                     },
                   ),
-                  if (_showCurrentWord)
+                  if (!_showCurrentWord)
                     Text(
                       'Word was: $_currentWord',
                       style: TextStyle(
@@ -168,21 +171,22 @@ class _GameplayState extends State<Gameplay> {
     );
   }
 
-  int _getOpponentScore() {
+  List<int> _getOpponentScores() {
     final store = context.read<Store>();
     final lobbyData = store.lobby;
 
-    LobbyPlayerInfo? opponent;
+    Iterable<LobbyPlayerInfo>? opponent;
     try {
-      opponent = lobbyData.players.values.firstWhere(
+      opponent = lobbyData.players.values.where(
         (e) => e.user.id != store.user.id,
       );
     } catch (e) {
       print('No opponent found');
     }
-    final int opponentScore = opponent?.score ?? 0;
+    List<int> opponentScores = opponent?.map((e) => e.score).toList() ?? [];
+    opponentScores.sort((a, b) => b.compareTo(a));
 
-    return opponentScore;
+    return opponentScores;
   }
 
   int _getPlayerScore() {
@@ -236,6 +240,7 @@ class _GameplayState extends State<Gameplay> {
 
     // correct attempt
     if (currentAttempt == _currentWord) {
+      SoundEngine.playSound('correctGuess');
       // update score
       _updateScore();
       // increment round
@@ -320,6 +325,9 @@ class _GameplayState extends State<Gameplay> {
 
     final store = context.read<Store>();
     final lobbyData = store.lobby;
+    final gameResult = _getPlayerScore() > _getOpponentScores().first
+        ? 'won'
+        : 'lost';
 
     //leave lobby
     await leaveLobby(lobbyId: lobbyData.id, playerId: store.user.id);
@@ -333,6 +341,13 @@ class _GameplayState extends State<Gameplay> {
     await Future.delayed(const Duration(seconds: 2));
     // delete lobby in firestore
     await deleteLobby(lobbyId: lobbyData.id);
+
+    if (gameResult == 'won') {
+      SoundEngine.playSound('gameWon');
+    } else {
+      SoundEngine.playSound('gameLost');
+    }
+
     // show gameover card
     GameoverCard.show(
       context: context,
@@ -364,7 +379,7 @@ class _GameplayState extends State<Gameplay> {
   void _selectWord() async {
     final String wordList = await DefaultAssetBundle.of(
       context,
-    ).loadString('lib/assets/5-letter-words.txt');
+    ).loadString('assets/5-letter-words.txt');
     final List<String> words = wordList.split('\n');
     setState(() {
       _currentWord = words[DateTime.now().millisecondsSinceEpoch % words.length]
@@ -413,6 +428,10 @@ class _GameplayState extends State<Gameplay> {
       }
       setState(() {
         _remainingSeconds = _roundDuration - elapsedTime.inSeconds;
+        if (_remainingSeconds <= 30 && _timeEndingSoundPlayed == false) {
+          SoundEngine.playSound('timeRunningOut');
+          _timeEndingSoundPlayed = true;
+        }
       });
     });
   }
