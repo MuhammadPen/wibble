@@ -47,7 +47,7 @@ class _MyAppContentState extends State<MyAppContent>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    SoundEngine.playBackgroundMusic();
+    // SoundEngine.playBackgroundMusic();
   }
 
   @override

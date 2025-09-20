@@ -156,19 +156,24 @@ class _MainmenuState extends State<Mainmenu> {
                     ),
                     SizedBox(height: 20),
                     //-----private lobby-----
-                    CustomButton(
-                      onPressed: () async {
-                        await store.createPrivateLobby();
-                        Navigator.pushReplacementNamed(
-                          context,
-                          "/${Routes.privateLobby.name}",
-                        );
-                      },
-                      text: "Private lobby",
-                      backgroundColor: Color(0xffFF7300),
-                      width: 370,
-                      fontSize: 48,
-                      disabled: store.user.id.isEmpty,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CustomButton(
+                          onPressed: () async {
+                            await store.createPrivateLobby();
+                            Navigator.pushReplacementNamed(
+                              context,
+                              "/${Routes.privateLobby.name}",
+                            );
+                          },
+                          text: "Private lobby",
+                          backgroundColor: Color(0xffFF7300),
+                          width: 370,
+                          fontSize: 48,
+                          disabled: store.user.id.isEmpty,
+                        ),
+                      ],
                     ),
                     SizedBox(height: 20),
                     //-----how to play, exit-----
