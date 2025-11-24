@@ -19,6 +19,8 @@ import 'firebase/index.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeFirebase();
+  // Initialize audio engine
+  await SoundEngine.initialize();
   runApp(MyApp());
 }
 

@@ -136,14 +136,14 @@ class _GameplayState extends State<Gameplay> {
                       SoundEngine.playSound('gameStart');
                     },
                   ),
-                  if (!_showCurrentWord)
-                    Text(
-                      'Word was: $_currentWord',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                  // if (!_showCurrentWord)
+                  //   Text(
+                  //     'Word was: $_currentWord',
+                  //     style: TextStyle(
+                  //       fontSize: 20,
+                  //       fontWeight: FontWeight.w500,
+                  //     ),
+                  //   ),
                   // Word grid display
                   WordGrid(
                     guessGrid: _guessGrid,
