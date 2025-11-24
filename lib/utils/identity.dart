@@ -1,13 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:fpjs_pro_plugin/error.dart';
-import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wibble/components/widgets/user_form.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/types.dart';
+import 'package:wibble/utils/device_fingerprint.dart';
 
 Future<User?> identifyUser({required BuildContext context}) async {
   final prefs = await SharedPreferences.getInstance();
@@ -23,7 +22,7 @@ Future<User?> identifyUser({required BuildContext context}) async {
   }
 
   try {
-    var visitorId = await FpjsProPlugin.getVisitorId();
+    var visitorId = await DeviceFingerprint.getVisitorId();
 
     user = await getUser(userId: visitorId ?? Uuid().v4());
 
@@ -45,7 +44,7 @@ Future<User?> identifyUser({required BuildContext context}) async {
       //cache user
       await prefs.setString(UserCacheKeys.user.name, jsonEncode(user.toJson()));
     }
-  } on FingerprintProError catch (e) {
+  } catch (e) {
     // Process the error
     print('Error identifying visitor: $e');
   }

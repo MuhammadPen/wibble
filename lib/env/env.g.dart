@@ -24,6 +24,4 @@ final class _Env {
 
   static const String FIREBASE_API_KEY_WINDOWS =
       'AIzaSyBktd-xC3rCpQv_gXeziyXZuFPxUzlfVm8';
-
-  static const String FINGERPRINT_API_KEY = 'FPMPfxvRl5UyDBfEhmfg';
 }

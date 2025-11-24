@@ -18,6 +18,4 @@ final class Env {
   static const String FIREBASE_API_KEY_MACOS = _Env.FIREBASE_API_KEY_MACOS;
   @EnviedField()
   static const String FIREBASE_API_KEY_WINDOWS = _Env.FIREBASE_API_KEY_WINDOWS;
-  @EnviedField()
-  static const String FINGERPRINT_API_KEY = _Env.FINGERPRINT_API_KEY;
 }

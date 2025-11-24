@@ -4,14 +4,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:fpjs_pro_plugin/fpjs_pro_plugin.dart';
-import 'package:fpjs_pro_plugin/region.dart';
 import 'package:provider/provider.dart';
 import 'package:wibble/components/ui/button.dart';
 import 'package:wibble/components/ui/loading.dart';
 import 'package:wibble/components/widgets/how_to_play.dart';
 import 'package:wibble/components/widgets/title_card.dart';
-import 'package:wibble/env/env.dart';
 import 'package:wibble/firebase/firebase_utils.dart';
 import 'package:wibble/main.dart';
 import 'package:wibble/styles/text.dart';
@@ -37,7 +34,7 @@ class _MainmenuState extends State<Mainmenu> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      initFingerprint();
+      initUser();
     });
 
     _store = context.read<Store>();
@@ -208,11 +205,7 @@ class _MainmenuState extends State<Mainmenu> {
     );
   }
 
-  void initFingerprint() async {
-    await FpjsProPlugin.initFpjs(
-      Env.FINGERPRINT_API_KEY, // insert your API key here
-      region: Region.us, // Insert the data region of your Fingerprint workspace
-    );
+  void initUser() async {
     final user = await identifyUser(context: context);
     if (user != null) {
       final store = context.read<Store>();
